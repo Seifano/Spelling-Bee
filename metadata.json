@@ -1,0 +1,6 @@
+{
+  "name": "SpellBee Arena - Online Spelling Bee Competition",
+  "description": "Professional online spelling bee competition platform with voice recognition, live stage timer, pronouncer tools, AI word list extraction, and class leaderboards.",
+  "requestFramePermissions": ["microphone", "camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

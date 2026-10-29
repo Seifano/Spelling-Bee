@@ -1,0 +1,1882 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Spelling Bee Round 2</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* Layout: school-colored header band, one focused "stage" card per word, everything else tucked away.
+     --brand / --accent are set from the School colors setting at runtime. */
+  :root {
+    --brand: #1b2a4e; --accent: #a51c30; --ok-base: #1f7a3d; --brand-ink: #ffffff; --accent-ink: #1a1405;
+    --bg: color-mix(in srgb, var(--brand) 5%, #f6f6f3);
+    --surface: #ffffff;
+    --fg: #182131; --muted: #5d6677; --line: #dde1e7;
+    --brand-text: var(--brand);
+    --ok: var(--ok-base); --ok-soft: color-mix(in srgb, var(--ok-base) 13%, #ffffff); --bad: #c2323b; --bad-soft: #fbe6e7;
+    --font: 'Lexend', 'Segoe UI', system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: color-mix(in srgb, var(--brand) 12%, #0d1118); --surface: #161c26;
+      --fg: #e9edf3; --muted: #9aa4b4; --line: #2a3342;
+      --brand-text: color-mix(in srgb, var(--brand) 40%, #ffffff);
+      --ok: color-mix(in srgb, var(--ok-base) 55%, #ffffff); --ok-soft: color-mix(in srgb, var(--ok-base) 28%, #161c26); --bad: #f0646c; --bad-soft: #3a1a1d; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: color-mix(in srgb, var(--brand) 12%, #0d1118); --surface: #161c26;
+    --fg: #e9edf3; --muted: #9aa4b4; --line: #2a3342;
+    --brand-text: color-mix(in srgb, var(--brand) 40%, #ffffff);
+    --ok: color-mix(in srgb, var(--ok-base) 55%, #ffffff); --ok-soft: color-mix(in srgb, var(--ok-base) 28%, #161c26); --bad: #f0646c; --bad-soft: #3a1a1d; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  .edit input::placeholder { text-transform: none; letter-spacing: 0; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 15px; line-height: 1.5; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+  /* Header band */
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--brand); }
+  .top { background: var(--brand); color: var(--brand-ink); border-bottom: 4px solid var(--accent); position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; }
+  .top-in { display: flex; align-items: center; gap: 16px; padding-block: 12px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 12px; margin-right: auto; min-width: 0; }
+  .logo { width: 42px; height: 42px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-size: 22px; flex: none; }
+  .school { font-weight: 700; font-size: 18px; line-height: 1.2; text-wrap: balance; }
+  .sub { font-size: 12px; opacity: .8; }
+  .tabs { display: flex; gap: 4px; background: rgba(0,0,0,.18); padding: 4px; border-radius: 999px; }
+  .tabs button { border: 0; background: transparent; color: var(--brand-ink); padding: 7px 14px; border-radius: 999px; font-size: 14px; font-weight: 500; opacity: .85; }
+  .tabs button.on { background: var(--accent); color: var(--accent-ink); opacity: 1; font-weight: 700; }
+  .tabs .count { font-size: 11px; opacity: .75; margin-left: 2px; }
+  .icon-btn { border: 1px solid rgba(255,255,255,.35); background: transparent; color: var(--brand-ink); width: 38px; height: 38px; border-radius: 50%; font-size: 18px; }
+
+  main { padding-block: 20px 48px; display: grid; gap: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
+  .field { display: grid; gap: 4px; flex: 1 1 180px; min-width: 0; }
+  .field label, .label { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .03em; text-transform: uppercase; }
+  input[type=text], input[type=password], select, textarea { width: 100%; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 9px 12px; }
+  textarea { resize: vertical; }
+
+  .btn { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 9px 14px; font-weight: 600; font-size: 14px; }
+  .btn:hover { border-color: var(--brand-text); }
+  .btn-brand { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
+  .btn-accent { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .btn-ok { background: var(--ok); color: #fff; border-color: var(--ok); }
+  .btn-bad { background: var(--bad); color: #fff; border-color: var(--bad); }
+  .btn-ghost { background: transparent; border-color: transparent; color: var(--muted); }
+  .btn-ghost:hover { color: var(--fg); border-color: var(--line); }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .btn.suggest { box-shadow: 0 0 0 3px var(--accent); }
+
+  /* Word steps */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .step { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface); font-weight: 600; font-size: 14px; text-align: left; }
+  .step .dot { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; background: var(--line); color: var(--muted); flex: none; }
+  .step.active { border-color: var(--brand-text); }
+  .step.active .dot { background: var(--brand); color: var(--brand-ink); }
+  .step.pass .dot { background: var(--ok); color: #fff; }
+  .step.fail .dot { background: var(--bad); color: #fff; }
+  .step small { color: var(--muted); font-weight: 400; margin-left: auto; }
+
+  /* Stage */
+  .stage { display: grid; grid-template-columns: 240px 1fr; gap: 24px; }
+  .stage-left { display: grid; gap: 14px; align-content: start; }
+  .btn-say { border: 0; background: var(--brand); color: var(--brand-ink); border-radius: 16px; padding: 22px 16px; font-size: 19px; font-weight: 700; display: grid; gap: 4px; justify-items: center; }
+  .btn-say span { font-size: 30px; line-height: 1; }
+  .btn-say small { font-size: 12px; font-weight: 400; opacity: .85; }
+  .btn-start { border: 0; background: var(--ok); color: #fff; border-radius: 14px; padding: 14px; font-size: 19px; font-weight: 700; }
+  .btn-start:disabled { opacity: .35; cursor: default; }
+  .btn-start.pulse { animation: pulse 1.3s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 55%, transparent); } 50% { box-shadow: 0 0 0 10px transparent; } }
+  .src { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+  .src-field { display: grid; gap: 4px; flex: 1 1 180px; min-width: 0; }
+  .src-field input[type=range] { width: 100%; accent-color: var(--ok); }
+  .help { font-size: 13px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: color-mix(in srgb, var(--accent) 6%, var(--surface)); }
+  .help p { margin: 6px 0; } .help ol { margin: 6px 0; padding-left: 20px; display: grid; gap: 4px; }
+  .tile.pop { animation: pop .18s ease-out; }
+  @keyframes pop { from { transform: scale(.6); } to { transform: scale(1); } }
+  .hints { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .hints .btn { font-size: 13px; padding: 8px; }
+  .timer { display: flex; align-items: center; gap: 12px; }
+  .ring { position: relative; width: 72px; height: 72px; flex: none; }
+  .ring svg { transform: rotate(-90deg); }
+  .ring .num { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 800; font-size: 24px; font-variant-numeric: tabular-nums; }
+  .ring circle { transition: stroke-dashoffset .3s linear, stroke .3s; }
+  #timer-text { font-size: 13px; color: var(--muted); }
+  .clue { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 10px; min-height: 2.5em; }
+
+  .stage-right { display: grid; gap: 14px; align-content: start; min-width: 0; }
+  .mic { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--fg) 4%, transparent); }
+  .mic-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--muted); flex: none; }
+  .mic.on .mic-dot { background: var(--ok); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ok) 25%, transparent); }
+  .mic.blocked .mic-dot { background: var(--bad); }
+  #mic-label { font-size: 13px; font-weight: 600; }
+  .meter { flex: 1 1 80px; height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; min-width: 60px; }
+  .meter i { display: block; height: 100%; width: 0; background: var(--ok); border-radius: 99px; transition: width .08s; }
+  .mic .btn { padding: 6px 12px; font-size: 13px; }
+
+  .letters { min-height: 76px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px; border: 2px dashed var(--line); border-radius: 14px; }
+  .letters .empty { color: var(--muted); font-size: 14px; }
+  .tile { width: 48px; height: 56px; border-radius: 10px; display: grid; place-items: center; font-size: 28px; font-weight: 800; background: color-mix(in srgb, var(--brand-text) 10%, var(--surface)); border: 2px solid var(--brand-text); color: var(--fg); }
+  .tile.interim { opacity: .7; border-style: dashed; }
+  .tile.unsure { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, var(--surface)); }
+  .heard { font-size: 12px; color: var(--muted); min-height: 1.5em; overflow-wrap: anywhere; }
+  .edit { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .edit input { flex: 1 1 140px; width: auto; text-transform: uppercase; letter-spacing: .1em; }
+
+  .verdict { display: grid; gap: 12px; padding: 14px; border-radius: 14px; border: 1px solid var(--line); }
+  .verdict.match { background: var(--ok-soft); border-color: var(--ok); }
+  .verdict.nomatch { background: var(--bad-soft); border-color: var(--bad); }
+  .compare { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; align-items: baseline; }
+  .compare b { font-size: 22px; letter-spacing: .12em; overflow-wrap: anywhere; }
+  .compare .diff { color: var(--bad); text-decoration: underline; }
+  .verdict-title { font-weight: 700; }
+
+  .summary h2 { margin: 0; font-size: 22px; }
+  .score-big { font-size: 40px; font-weight: 800; color: var(--brand-text); font-variant-numeric: tabular-nums; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); background: color-mix(in srgb, var(--fg) 3%, var(--surface)); position: sticky; top: 0; }
+  tr:last-child td { border-bottom: 0; }
+  .w { font-weight: 700; color: var(--brand-text); }
+  .rank { width: 28px; height: 28px; border-radius: 50%; display: inline-grid; place-items: center; font-weight: 700; font-size: 13px; background: var(--line); }
+  .rank.r1 { background: var(--accent); color: var(--accent-ink); }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .tag.q { background: var(--ok-soft); color: var(--ok); }
+  .tag.e { background: color-mix(in srgb, var(--fg) 6%, transparent); color: var(--muted); }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* Upload */
+  .drop { border: 2px dashed color-mix(in srgb, var(--brand-text) 45%, var(--line)); border-radius: 16px; padding: 28px 18px; display: grid; justify-items: center; gap: 8px; text-align: center; }
+  .drop.drag { background: color-mix(in srgb, var(--accent) 12%, transparent); border-color: var(--accent); }
+  .drop h3 { margin: 0; font-size: 18px; }
+  .drop p { margin: 0; color: var(--muted); font-size: 13px; max-width: 46ch; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .status { display: flex; align-items: center; gap: 12px; }
+  .spinner { width: 18px; height: 18px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--brand-text); animation: spin .8s linear infinite; flex: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .review td input, .review td textarea { padding: 6px 8px; font-size: 13px; }
+  .review td textarea { min-width: 200px; }
+  details summary { cursor: pointer; color: var(--brand-text); font-weight: 600; font-size: 14px; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .head-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+  .head-row h2 { margin: 0; font-size: 18px; }
+
+  /* Settings */
+  .settings { background: var(--surface); border-bottom: 1px solid var(--line); }
+  .settings .wrap { padding-block: 16px; display: grid; gap: 14px; }
+  .swatch { display: flex; align-items: center; gap: 8px; }
+  .swatch input[type=color] { width: 44px; height: 36px; border: 1px solid var(--line); border-radius: 8px; padding: 2px; background: var(--surface); }
+  .presets { display: flex; gap: 6px; flex-wrap: wrap; }
+  .presets button { border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 4px 10px 4px 4px; font-size: 12px; display: flex; align-items: center; gap: 6px; }
+  .presets i { width: 18px; height: 18px; border-radius: 50%; display: inline-block; }
+
+  #toasts { position: fixed; z-index: 50; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 8px; max-width: min(380px, calc(100vw - 32px)); }
+  .toast { background: var(--fg); color: var(--bg); padding: 11px 14px; border-radius: 12px; font-size: 13px; font-weight: 500; box-shadow: 0 6px 24px rgba(0,0,0,.2); }
+  .toast.error { background: var(--bad); color: #fff; }
+  .toast.success { background: var(--ok); color: #fff; }
+
+  @media (max-width: 720px) {
+    .stage { grid-template-columns: 1fr; }
+    .steps small { display: none; }
+    .tile { width: 40px; height: 48px; font-size: 24px; }
+    .sub { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { .spinner, .btn-start.pulse, .tile.pop { animation: none; } .ring circle, .meter i { transition: none; } }
+</style>
+
+<header class="top">
+  <div class="wrap top-in">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">🐝</div>
+      <div style="min-width:0">
+        <div class="school" id="school-name">Spelling Bee</div>
+        <div class="sub">Spelling Bee 2026–2027 · Top 3 in each class go to the Final</div>
+      </div>
+    </div>
+    <nav class="tabs" aria-label="Sections">
+      <button data-tab="arena" class="on">Compete</button>
+      <button data-tab="words">Words <span class="count" id="nav-word-count"></span></button>
+      <button data-tab="results">Results <span class="count" id="nav-result-count"></span></button>
+    </nav>
+    <button class="icon-btn" id="btn-settings" aria-label="Settings" title="Settings">⚙</button>
+  </div>
+</header>
+
+<div class="settings" id="settings" hidden>
+  <div class="wrap">
+    <div class="row">
+      <div class="field"><label for="set-school">School name</label><input type="text" id="set-school" placeholder="e.g. Al Noor International School" /></div>
+      <div class="field" style="flex:0 1 160px"><label for="set-seconds">Seconds per word</label>
+        <select id="set-seconds"><option value="10">10</option><option value="12">12</option><option value="15">15</option><option value="20">20</option><option value="30">30</option></select>
+      </div>
+      <div class="field" style="flex:1 1 260px"><label for="set-voice">Reading voice</label>
+        <div class="row" style="flex-wrap:nowrap"><select id="set-voice"></select><button class="btn" id="btn-test-voice" type="button">Test</button></div>
+        <span class="muted" id="voice-note" style="font-size:12px"></span>
+      </div>
+      <div class="field" style="flex:0 1 190px"><label for="set-lang">English</label>
+        <select id="set-lang"><option value="en-US">American (Z = zee)</option><option value="en-GB">British (Z = zed)</option></select>
+      </div>
+      <div class="field" style="flex:0 1 140px"><label for="set-sound">Sounds</label>
+        <select id="set-sound"><option value="on">On</option><option value="off">Off</option></select>
+      </div>
+    </div>
+    <div class="row" style="align-items:center">
+      <span class="label">School colors</span>
+      <label class="swatch"><input type="color" id="set-brand" aria-label="Main color" /> <span class="muted">Main</span></label>
+      <label class="swatch"><input type="color" id="set-accent" aria-label="Accent color" /> <span class="muted">Accent</span></label>
+      <label class="swatch"><input type="color" id="set-green" aria-label="Correct color" /> <span class="muted">Correct</span></label>
+      <div class="presets" id="color-presets"></div>
+      <button class="btn" id="btn-close-settings" style="margin-left:auto">Done</button>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <!-- COMPETE -->
+  <section id="tab-arena" style="display:grid; gap:16px">
+    <div class="card row">
+      <div class="field"><label for="input-student-name">Student</label><input type="text" id="input-student-name" placeholder="Student full name" /></div>
+      <div class="field" style="flex:0 1 180px"><label for="select-class">Class</label><select id="select-class"></select></div>
+      <div class="field" style="flex:0 1 210px"><label for="select-level">Words</label>
+        <select id="select-level"><option value="mixed">One of each level</option><option value="Easy">3 Easy</option><option value="Medium">3 Medium</option><option value="Hard">3 Hard</option><option value="any">Any 3</option></select>
+      </div>
+      <button class="btn btn-accent" id="btn-new-round">🎲 New 3 words</button>
+    </div>
+
+    <div class="steps" id="steps">
+      <button class="step" data-i="0"><span class="dot">1</span>Word 1<small></small></button>
+      <button class="step" data-i="1"><span class="dot">2</span>Word 2<small></small></button>
+      <button class="step" data-i="2"><span class="dot">3</span>Word 3<small></small></button>
+    </div>
+
+    <div class="card" id="no-words" hidden style="text-align:center; display:grid; gap:10px; justify-items:center; padding:32px 18px">
+      <div style="font-weight:700; font-size:17px" id="no-words-text"></div>
+      <div class="muted">Upload that grade's word list in the Words tab, then come back.</div>
+      <button class="btn btn-brand" id="btn-go-words">Go to Words</button>
+    </div>
+
+    <div class="card stage" id="stage">
+      <div class="stage-left">
+        <button class="btn-say" id="btn-say"><span>🔊</span>Say the word<small id="say-sub">Word 1 of 3</small></button>
+        <button class="btn-start" id="btn-start" title="Shortcut: Space">▶ Start</button>
+        <div class="hints">
+          <button class="btn" id="btn-def">Definition</button>
+          <button class="btn" id="btn-sent">Sentence</button>
+        </div>
+        <div class="timer">
+          <div class="ring">
+            <svg width="72" height="72" viewBox="0 0 72 72" aria-hidden="true">
+              <circle cx="36" cy="36" r="30" fill="none" stroke="var(--line)" stroke-width="6" />
+              <circle id="ring-fill" cx="36" cy="36" r="30" fill="none" stroke="var(--ok)" stroke-width="6" stroke-linecap="round" stroke-dasharray="188.5" stroke-dashoffset="0" />
+            </svg>
+            <div class="num" id="timer-num">12</div>
+          </div>
+          <div><div style="font-weight:600">Time</div><div id="timer-text">Starts after the word is spoken</div></div>
+        </div>
+        <div class="clue" id="clue"></div>
+      </div>
+
+      <div class="stage-right">
+        <div class="mic" id="mic-box">
+          <span class="mic-dot"></span>
+          <span id="mic-label">Microphone off</span>
+          <div class="meter" title="Mic level"><i id="meter-fill"></i></div>
+          <button class="btn" id="btn-mic">Turn on mic</button>
+        </div>
+        <div class="src" id="src-row" hidden>
+          <label class="src-field"><span class="label">Recognizer</span><select id="engine-select"><option value="letters">Letter engine (recommended)</option><option value="browser">Browser speech (online)</option></select></label>
+          <label class="src-field"><span class="label">Listen to</span><select id="src-select"><option>Turn on mic first</option></select></label>
+          <label class="src-field" id="gain-wrap"><span class="label">Boost <b id="gain-val"></b></span><input type="range" id="gain" min="1" max="8" step="0.5" /></label>
+          <button class="btn btn-ghost" id="btn-teams-help">Teams setup</button>
+          <div class="muted" id="src-note" style="flex-basis:100%"></div>
+          <div class="row" style="flex-basis:100%; align-items:center">
+            <span class="muted" id="engine-note" style="flex:1"></span>
+            <label class="btn" id="btn-engine-file" hidden style="cursor:pointer">Load engine file<input type="file" id="engine-file" class="sr-only" accept=".gz,.tgz,application/gzip,application/x-gzip" /></label>
+          </div>
+        </div>
+        <div class="help" id="teams-help" hidden>
+          <b>Spelling over Microsoft Teams</b>
+          <p>The page has to hear the students' Teams sound, not your room.</p>
+          <ol>
+            <li><b>Best:</b> keep <i>Recognizer</i> on <i>Letter engine</i>. Under <i>Listen to</i>, choose <i>Teams sound</i>. Share the Teams tab (Teams in the browser: tick <i>Also share tab audio</i>) or your entire screen (Teams app on Windows: tick <i>Share system audio</i>). Ask a student to say "A B C" and watch the green bar.</li>
+            <li><b>If letters still don't appear:</b> install a free virtual cable (VB-CABLE on Windows, BlackHole on Mac). In Teams, set <i>Speaker</i> to the cable, then choose the cable under <i>Listen to</i>.</li>
+            <li><b>Simplest:</b> use speakers, not headphones, with the volume up and the computer's mic near the speaker.</li>
+          </ol>
+          <p>When you share this page in Teams, turn on <i>Include computer sound</i> so students hear the word read aloud. Ask students to unmute, speak close to their mic, pause briefly between letters, and set Teams <i>Noise suppression</i> to Low.</p>
+        </div>
+
+        <div>
+          <div class="label" style="margin-bottom:6px">Letters heard</div>
+          <div class="letters" id="letters"><span class="empty">The letters the student says appear here.</span></div>
+          <div class="heard" id="heard"></div>
+        </div>
+
+        <div class="edit">
+          <button class="btn btn-ghost" id="btn-undo">⌫ Remove last</button>
+          <button class="btn btn-ghost" id="btn-clear">Clear</button>
+          <input type="text" id="input-type" placeholder="Or type letters + Enter" aria-label="Type letters" autocomplete="off" />
+        </div>
+
+        <button class="btn btn-brand" id="btn-check" style="padding:12px">Check spelling</button>
+
+        <div class="verdict" id="verdict" hidden>
+          <div class="verdict-title" id="verdict-title"></div>
+          <div class="compare">
+            <span class="muted">Answer</span><b id="answer-word"></b>
+            <span class="muted">Student</span><b id="student-word"></b>
+          </div>
+          <div class="row">
+            <button class="btn btn-ok" id="btn-correct">✓ Correct</button>
+            <button class="btn btn-bad" id="btn-wrong">✕ Wrong</button>
+            <button class="btn" id="btn-next" style="margin-left:auto" hidden>Next word →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card summary" id="summary" hidden>
+      <div class="head-row">
+        <div><div class="label">Round finished</div><h2 id="sum-name"></h2><div class="muted" id="sum-class"></div></div>
+        <div style="text-align:right"><div class="score-big" id="sum-score"></div><div class="muted" id="sum-time"></div></div>
+      </div>
+      <div class="table-wrap" style="margin-top:14px">
+        <table><thead><tr><th>Word</th><th>Student spelled</th><th>Time</th><th>Result</th></tr></thead><tbody id="sum-body"></tbody></table>
+      </div>
+      <div class="row" style="margin-top:14px; justify-content:flex-end">
+        <button class="btn btn-accent" id="btn-next-student">Save &amp; next student →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- WORDS -->
+  <section id="tab-words" hidden style="display:grid; gap:16px">
+    <div class="card" style="display:grid; gap:14px">
+      <div class="drop" id="drop">
+        <div style="font-size:30px">📄</div>
+        <h3>Upload your word list</h3>
+        <p>PDF, Word, a photo of the list, TXT or CSV. AI picks out the spelling words and writes any missing definitions and sentences.</p>
+        <div class="row" style="justify-content:center; align-items:center">
+          <label class="muted" style="display:flex; gap:6px; align-items:center">Add to <select id="upload-grade" style="width:auto"></select></label>
+          <label class="btn btn-brand" style="cursor:pointer">Choose file<input type="file" id="file-input" class="sr-only" accept=".csv,.txt,.pdf,.docx,.png,.jpg,.jpeg,.webp,.gif,text/plain,text/csv,application/pdf,image/*" /></label>
+          <label class="muted" style="display:flex; gap:6px; align-items:center"><input type="checkbox" id="chk-replace" /> Replace current words</label>
+        </div>
+        <p id="ai-note" style="font-size:12px">Or drag a file here.</p>
+        <div id="api-key-box" hidden style="width:100%; max-width:460px; text-align:left; display:grid; gap:6px; margin-top:6px">
+          <label class="label" for="input-api-key">Anthropic API key (for AI outside Claude)</label>
+          <div class="row" style="flex-wrap:nowrap">
+            <input type="password" id="input-api-key" autocomplete="off" placeholder="sk-ant-..." />
+            <button class="btn btn-brand" id="btn-save-key">Save</button>
+            <button class="btn" id="btn-forget-key">Forget</button>
+          </div>
+          <span class="muted" style="font-size:12px">Saved only in this browser. Without a key, TXT/CSV lists still work.</span>
+        </div>
+      </div>
+
+      <div class="status card" id="extract-status" hidden>
+        <div class="spinner"></div>
+        <div style="flex:1; min-width:0"><div style="font-weight:600" id="extract-title">Reading file…</div><div class="muted" id="extract-sub"></div></div>
+        <button class="btn" id="btn-stop">Stop</button>
+      </div>
+
+      <div id="review" hidden style="display:grid; gap:10px">
+        <div class="head-row">
+          <div><h2>Check the words</h2><div class="muted" id="review-sub"></div></div>
+          <label class="muted" style="display:flex; gap:6px; align-items:center"><input type="checkbox" id="chk-all" checked /> Select all</label>
+        </div>
+        <div class="table-wrap review" style="max-height:360px">
+          <table><thead><tr><th></th><th>Word</th><th>Level</th><th>Definition</th><th>Sentence</th></tr></thead><tbody id="review-body"></tbody></table>
+        </div>
+        <div class="row" style="justify-content:flex-end">
+          <button class="btn" id="btn-discard">Discard</button>
+          <button class="btn btn-ok" id="btn-add">Add selected words</button>
+        </div>
+      </div>
+
+      <details>
+        <summary>Paste words instead</summary>
+        <div style="display:grid; gap:10px; margin-top:10px">
+          <textarea id="paste" rows="4" placeholder="One word per line, or: word, definition, sentence"></textarea>
+          <div class="row">
+            <button class="btn btn-brand" id="btn-paste-ai">Extract with AI</button>
+            <button class="btn" id="btn-paste-add">Add as typed</button>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <div class="card" style="display:grid; gap:12px">
+      <div class="head-row">
+        <h2 id="bank-title">Word bank</h2>
+        <div class="row" style="align-items:center">
+          <select id="bank-grade" aria-label="Show grade" style="width:auto"></select>
+          <input type="text" id="search" placeholder="Search" style="width:180px" aria-label="Search words" />
+          <button class="btn" id="btn-export-words">Export</button>
+          <button class="btn btn-ghost" id="btn-clear-words">Clear grade</button>
+        </div>
+      </div>
+      <div class="table-wrap" style="max-height:420px">
+        <table><thead><tr><th>#</th><th>Word</th><th>Level</th><th>Definition</th><th>Sentence</th><th></th></tr></thead><tbody id="bank-body"></tbody></table>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="tab-results" hidden>
+    <div class="card" style="display:grid; gap:12px">
+      <div class="head-row">
+        <div><h2>Finals qualifiers</h2><div class="muted">Ranked by score, then fastest time. Top 3 in each class qualify.</div></div>
+        <div class="row" style="align-items:center">
+          <select id="filter-class" aria-label="Filter by class" style="width:auto"></select>
+          <button class="btn" id="btn-export-results">Export</button>
+          <button class="btn btn-ghost" id="btn-clear-results">Reset</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Rank</th><th>Student</th><th>Class</th><th>Score</th><th>Time</th><th>Status</th></tr></thead><tbody id="results-body"></tbody></table>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="toasts" aria-live="polite"></div>
+
+<script>
+  // ---------- Data ----------
+  // Official list: Spelling Bee Competition 2026–2027 (Easy 1–50, Medium 51–100, Hard 101–150)
+  const OFFICIAL_G4 = {
+    Easy: `
+young|In the early part of life; not old.|The young puppy slept in its basket.
+flick|To move something with a quick, light push.|She flicked the crumbs off the table.
+dark|Having little or no light.|It gets dark early in winter.
+light|Brightness that lets us see things.|Open the curtains to let the light in.
+waxy|Smooth and shiny, like wax.|The leaves of the plant felt waxy.
+plant|A living thing that grows in soil, like a tree or a flower.|Water the plant every morning.
+failed|Did not succeed.|The first try failed, so they tried again.
+kite|A light toy flown in the wind on a long string.|We flew a kite at the beach.
+search|To look carefully for something.|We searched the room for the missing key.
+laugh|To make sounds that show you find something funny.|The joke made everyone laugh.
+apple|A round fruit with red or green skin.|I eat an apple at lunch.
+basket|A container woven from thin strips, used to carry things.|She put the eggs in a basket.
+candle|A stick of wax with a wick that burns to give light.|He lit a candle on the cake.
+dance|To move your body to music.|The children dance at the school party.
+elbow|The joint in the middle of your arm.|He bumped his elbow on the door.
+flower|The colorful part of a plant that blooms.|A red flower grew in the garden.
+garden|A piece of land where flowers or vegetables are grown.|Grandma grows tomatoes in her garden.
+happy|Feeling pleased and glad.|The good news made us happy.
+island|Land with water all around it.|We took a boat to the island.
+jacket|A short coat.|Wear your jacket because it is cold outside.
+kitten|A young cat.|The kitten played with a ball of string.
+lemon|A sour yellow fruit.|Mom squeezed a lemon into the water.
+market|A place where people buy and sell things.|We bought fresh fruit at the market.
+napkin|A piece of cloth or paper used to wipe your mouth.|Put a napkin next to each plate.
+orange|A round, juicy fruit; also a color.|I drink orange juice at breakfast.
+pencil|A tool for writing or drawing.|Sharpen your pencil before the test.
+rabbit|A small animal with long ears and soft fur.|The rabbit hopped across the field.
+summer|The warmest season of the year.|We swim a lot in summer.
+ticket|A piece of paper that lets you enter a place or travel.|Show your ticket at the gate.
+window|An opening in a wall, with glass, that lets in light.|Please close the window.
+yellow|The color of the sun or a banana.|She wore a yellow dress.
+button|A small round piece used to fasten clothes.|A button fell off my shirt.
+cookie|A small, sweet baked treat.|He ate a chocolate cookie.
+dragon|A large, imaginary creature that breathes fire.|The story was about a friendly dragon.
+forest|A large area covered with trees.|Many animals live in the forest.
+gentle|Kind, soft and careful.|Be gentle when you hold the baby bird.
+honest|Telling the truth.|An honest student returns what is not theirs.
+insect|A small creature with six legs, like an ant.|A bee is an insect that makes honey.
+jungle|A thick, hot forest with many plants.|Monkeys swing through the jungle trees.
+little|Small in size or amount.|The little boy held his mother's hand.
+morning|The early part of the day.|I brush my teeth every morning.
+number|A word or symbol that shows how many.|Seven is my favorite number.
+picnic|A meal eaten outdoors.|We had a picnic in the park.
+quiet|Making little or no noise.|Please be quiet in the library.
+rainbow|An arc of colors in the sky after rain.|A rainbow appeared after the storm.
+school|A place where children go to learn.|We walk to school together.
+teacher|A person who helps others learn.|Our teacher reads us a story every day.
+uncle|The brother of your mother or father.|My uncle took us to the zoo.
+village|A small community in the countryside.|Everyone in the village knew each other.
+winter|The coldest season of the year.|It snows in winter in some countries.`,
+    Medium: `
+ocean|A very large area of salt water.|Whales swim in the ocean.
+wiggle|To move with small, quick twists.|The worm began to wiggle in the soil.
+review|To look at something again carefully.|Review your notes before the test.
+horizon|The line where the sky seems to meet the land or sea.|The sun set below the horizon.
+flight|A trip through the air, or the act of flying.|Our flight to London took six hours.
+predict|To say what you think will happen.|Can you predict the end of the story?
+imitate|To copy the way someone acts or speaks.|Parrots can imitate human voices.
+tropical|From the hot, wet parts of the world.|Bananas grow in tropical places.
+essay|A short piece of writing about one topic.|She wrote an essay about her family.
+uploaded|Sent a file from a device to the internet.|He uploaded his project to the class website.
+adventure|An exciting or unusual experience.|The trip to the desert was a real adventure.
+calendar|A chart that shows the days, weeks and months of a year.|Mark the date on the calendar.
+curious|Eager to know or learn something.|The curious cat looked inside the box.
+discover|To find something for the first time.|Scientists discover new animals every year.
+eager|Wanting to do something very much.|The students were eager to start the game.
+familiar|Well known because you have seen or heard it before.|Her face looked familiar to me.
+glacier|A huge, slow-moving mass of ice.|The glacier moved slowly down the mountain.
+harvest|The time when crops are gathered.|Farmers work hard during the harvest.
+imagine|To make a picture of something in your mind.|Imagine you could fly like a bird.
+journey|A trip from one place to another.|The journey across the desert took two days.
+language|The words people use to speak and write.|Arabic is a beautiful language.
+measure|To find the size or amount of something.|Use a ruler to measure the line.
+natural|Made by nature, not by people.|The park has a natural lake.
+opposite|Completely different from something else.|Hot is the opposite of cold.
+patient|Able to wait calmly without getting upset.|Be patient while the cake bakes.
+question|A sentence that asks for an answer.|Raise your hand to ask a question.
+reliable|Able to be trusted.|My old bike is slow but reliable.
+special|Different from others in a good way.|Today is a special day for our class.
+thunder|The loud sound that comes after lightning.|The thunder scared the little dog.
+unusual|Not common or normal.|It is unusual to see snow here.
+valuable|Worth a lot of money, or very important.|Friendship is more valuable than gold.
+whisper|To speak very softly.|She whispered a secret to her friend.
+ancient|Very old; from long ago.|We visited an ancient castle.
+bicycle|A vehicle with two wheels that you pedal.|He rides his bicycle to school.
+brilliant|Very bright, or very clever.|That was a brilliant idea!
+creative|Good at making new and original things.|The creative girl painted a mural.
+delightful|Very pleasing; giving great joy.|We had a delightful time at the park.
+exercise|Physical activity that keeps you healthy.|Daily exercise makes your body strong.
+favorite|Liked more than all the others.|Blue is my favorite color.
+generous|Happy to give and share with others.|The generous boy shared his lunch.
+humorous|Funny; making people laugh.|He told a humorous story.
+important|Having great value or meaning.|It is important to drink water.
+knowledge|What you know and understand.|Reading books gives you knowledge.
+library|A place where books are kept for people to read or borrow.|I borrowed a book from the library.
+mystery|Something that is hard to explain or understand.|The missing cookie was a mystery.
+ordinary|Normal; not special.|It was an ordinary day at school.
+popular|Liked by many people.|Football is a popular sport.
+remember|To keep something in your mind.|Remember to bring your homework.
+surprise|Something you did not expect.|The party was a big surprise.
+tomorrow|The day after today.|We have a test tomorrow.`,
+    Hard: `
+essential|Absolutely necessary.|Water is essential for life.
+delicious|Tasting very good.|The soup was delicious.
+equivalent|Equal in value, amount or meaning.|One dollar is equivalent to one hundred cents.
+museum|A building where interesting objects are kept and shown.|We saw dinosaur bones at the museum.
+collision|A crash between two moving things.|The two cars had a small collision.
+conjunction|A word that joins words or sentences, like and or but.|Because is a conjunction.
+species|A group of living things of the same kind.|The panda is an endangered species.
+treacherous|Very dangerous, or not to be trusted.|The icy road was treacherous.
+phenomenon|An event or fact that can be seen and studied.|A rainbow is a natural phenomenon.
+comprehension|The ability to understand something.|We practiced reading comprehension today.
+extraordinary|Very unusual or remarkable.|She has an extraordinary talent for music.
+inconvenience|Trouble or difficulty that causes problems.|The broken lift was an inconvenience.
+duplicate|An exact copy of something.|He made a duplicate of the key.
+environment|The natural world around us.|We must protect the environment.
+encouragement|Words or actions that give someone hope or confidence.|Her coach's encouragement helped her win.
+attention|Careful listening, watching or thinking.|Please pay attention to the teacher.
+celebration|A happy event to mark something special.|The Eid celebration lasted three days.
+consequence|A result of an action.|Being late to class has a consequence.
+tongue|The soft part in your mouth used for tasting and speaking.|The dog licked my hand with its tongue.
+sacrifice|Giving up something you value for something more important.|Parents make many sacrifices for their children.
+beneficial|Helpful or good for you.|Fresh air is beneficial to your health.
+comparison|Looking at things to see how they are alike or different.|We made a comparison of two stories.
+endurance|The ability to keep going through something hard.|Running a long race takes endurance.
+characteristic|A typical quality or feature.|Long ears are a characteristic of rabbits.
+arrangement|The way things are organized, or a plan.|The flower arrangement looked beautiful.
+motivation|A reason or desire to do something.|Her motivation to study was to become a doctor.
+tremendous|Very great in size or amount.|The team made a tremendous effort.
+specific|Clear and exact.|Give a specific example in your answer.
+geographical|Related to the land, places and features of the Earth.|Mountains are a geographical feature.
+personification|Giving human qualities to things that are not human.|The wind whispered is an example of personification.
+accommodate|To have enough space for, or to meet someone's needs.|The hall can accommodate two hundred people.
+bureaucracy|A system of government or management with many rules and offices.|The bureaucracy made the process very slow.
+conscientious|Careful and wanting to do things right.|A conscientious student checks their work.
+definitely|Without any doubt.|I will definitely come to your party.
+entrepreneur|A person who starts their own business.|The young entrepreneur opened a bakery.
+exaggerate|To make something seem bigger or more than it really is.|Do not exaggerate the size of the fish.
+fluorescent|Very bright and glowing.|The runner wore a fluorescent vest.
+guarantee|A promise that something will happen or work.|The shop gave a one-year guarantee.
+hierarchy|A system where people or things are ranked by level.|The army has a strict hierarchy.
+independent|Not needing others; free.|She is an independent learner.
+miscellaneous|Made of many different kinds of things.|The drawer was full of miscellaneous items.
+perseverance|Continuing to try even when it is hard.|Perseverance helped him finish the race.
+privilege|A special right or advantage.|It is a privilege to represent our school.
+questionnaire|A set of written questions to collect information.|Please fill out the questionnaire.
+renaissance|A rebirth or revival, especially of art and learning.|The city enjoyed a renaissance of culture.
+simultaneous|Happening at the same time.|There were two simultaneous goals.
+supersede|To take the place of something older.|The new rules will supersede the old ones.
+threshold|The entrance of a doorway, or the point where something begins.|She paused at the threshold of the room.
+unnecessary|Not needed.|Turn off unnecessary lights.
+vocabulary|All the words a person knows or uses.|Reading helps build your vocabulary.`
+  };
+  // Sample words shipped in earlier versions of this page; removed on upgrade.
+  const OLD_SAMPLES = new Set('adequate eager harvest kingdom melody nature opinion rescue talent whisper culture fragrance collision courage harmony leisure contribute maintain evaluate category ambition crucial appropriate persuade schedule accommodation acquaintance conscience definitely embarrass fluorescent mischievous privilege questionnaire discipline clarify complex disaster miracle synonymous catastrophe independent'.split(' '));
+  const LEVELS = ['Easy', 'Medium', 'Hard'];
+  const CLASSES = { 4: 'ABCDEHI', 5: 'ABCDEH', 6: 'ABCDEH', 7: 'ABCDEH', 8: 'ABCD', 9: 'ABCD' };
+  const COLOR_PRESETS = [
+    ['Our school', '#1b2a4e', '#a51c30', '#1f7a3d'], ['Green first', '#1f5e36', '#a51c30', '#1f7a3d'], ['Crimson first', '#8e1528', '#1b2a4e', '#1f7a3d']
+  ];
+
+  const IN_CLAUDE = !!window.claude;
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  };
+
+  let settings = Object.assign({ school: "Adhwa'a Al-Hedaya International Schools", brand: '#1b2a4e', accent: '#a51c30', green: '#1f7a3d', seconds: 12, sound: true, gain: 3, lang: 'en-US', deviceId: 'default', engine: 'letters', voice: '' }, store.get('spelling_bee_settings_v2', {}));
+  let words = store.get('spelling_bee_word_pool_v2', null);
+  if (!Array.isArray(words)) words = [];
+  // Older versions had one shared bank: drop the built-in samples, keep the teacher's own words as "any grade".
+  words = words.filter(w => w && w.word && (w.grade || !OLD_SAMPLES.has(w.word.toLowerCase())))
+               .map(w => w.grade ? w : { ...w, grade: 'any' });
+  if (!store.get('spelling_bee_g4_official_2026', false)) {
+    const have = new Set(words.filter(w => String(w.grade) === '4').map(w => w.word.toLowerCase()));
+    for (const level of LEVELS) for (const line of OFFICIAL_G4[level].trim().split('\n')) {
+      const [word, def, sentence] = line.split('|');
+      if (!have.has(word)) words.push({ word, def, sentence, grade: '4', level });
+    }
+    store.set('spelling_bee_g4_official_2026', true);
+    store.set('spelling_bee_word_pool_v2', words);
+  }
+  let usedThisSession = new Set();
+  if (!settings.schoolSet) { settings.school = settings.school || "Adhwa'a Al-Hedaya International Schools"; settings.schoolSet = true; }
+  let records = store.get('spelling_bee_leaderboard_v2', []);
+  if (!Array.isArray(records)) records = [];
+
+  // Round state
+  let round = [];            // 3 word objects
+  let results = [null, null, null];
+  let active = 0;
+  let phase = 'idle';        // idle | speaking | listening | checked | marked
+  let roundId = 0, savedRoundId = -1;
+
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  function toast(msg, type = '') {
+    const t = document.createElement('div');
+    t.className = 'toast ' + type;
+    t.textContent = msg;
+    $('toasts').appendChild(t);
+    setTimeout(() => t.remove(), 4000);
+  }
+
+  // ---------- Colors ----------
+  function inkFor(hex) {
+    const n = parseInt(hex.slice(1), 16), r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    const lum = [r, g, b].map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+    const L = 0.2126 * lum[0] + 0.7152 * lum[1] + 0.0722 * lum[2];
+    return L > 0.4 ? '#161616' : '#ffffff';
+  }
+  function applySettings() {
+    const r = document.documentElement.style;
+    r.setProperty('--brand', settings.brand);
+    r.setProperty('--accent', settings.accent);
+    r.setProperty('--brand-ink', inkFor(settings.brand));
+    r.setProperty('--accent-ink', inkFor(settings.accent));
+    r.setProperty('--ok-base', settings.green);
+    $('school-name').textContent = settings.school || 'Spelling Bee';
+    $('set-school').value = settings.school;
+    $('set-brand').value = settings.brand;
+    $('set-accent').value = settings.accent;
+    $('set-green').value = settings.green;
+    $('set-seconds').value = String(settings.seconds);
+    $('set-sound').value = settings.sound ? 'on' : 'off';
+    store.set('spelling_bee_settings_v2', settings);
+    if (phase !== 'listening') setTimerView(settings.seconds, settings.seconds);
+  }
+
+  // ---------- Sound ----------
+  let actx = null;
+  function beep(freq, dur = 0.12, type = 'sine', vol = 0.15) {
+    if (!settings.sound) return;
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      if (actx.state === 'suspended') actx.resume();
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = type; o.frequency.value = freq;
+      g.gain.setValueAtTime(vol, actx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + dur);
+      o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + dur);
+    } catch (e) {}
+  }
+  const chime = () => { beep(523, .12, 'triangle', .2); setTimeout(() => beep(659, .12, 'triangle', .2), 100); setTimeout(() => beep(784, .25, 'triangle', .22), 200); };
+  const buzz = () => { beep(240, .2, 'sawtooth', .18); setTimeout(() => beep(190, .3, 'sawtooth', .2), 170); };
+
+  // ---------- Text to speech ----------
+  // Resolves when speaking ends. The mic is paused while the page speaks so it never hears itself.
+  // Reading voice: always an English voice, never the computer's default language.
+  let voices = [];
+  function loadVoices() {
+    if (!('speechSynthesis' in window)) return;
+    voices = speechSynthesis.getVoices();
+    const sel = $('set-voice');
+    if (!sel) return;
+    const en = voices.filter(v => /^en[-_]/i.test(v.lang) || v.lang.toLowerCase() === 'en');
+    const rank = v => (v.lang.replace('_', '-').toLowerCase() === settings.lang.toLowerCase() ? 0 : 2) + (/natural|online|neural|google|aria|jenny|guy|samantha|daniel|libby|sonia|ryan/i.test(v.name) ? 0 : 1);
+    en.sort((a, b) => rank(a) - rank(b));
+    sel.innerHTML = en.length ? en.map(v => `<option value="${esc(v.voiceURI)}">${esc(v.name)} (${esc(v.lang)})</option>`).join('')
+                              : '<option value="">No English voice found on this computer</option>';
+    if (en.length) sel.value = en.some(v => v.voiceURI === settings.voice) ? settings.voice : en[0].voiceURI;
+    $('voice-note').textContent = en.length ? '' : 'Install an English voice: Windows Settings → Time & language → Speech → Add voices (English). On Mac: System Settings → Accessibility → Spoken Content.';
+  }
+  function pickVoice() {
+    if (!voices.length && 'speechSynthesis' in window) voices = speechSynthesis.getVoices();
+    const chosen = voices.find(v => v.voiceURI === ($('set-voice')?.value || settings.voice));
+    if (chosen) return chosen;
+    const en = voices.filter(v => /^en/i.test(v.lang));
+    return en.find(v => v.lang.replace('_', '-').toLowerCase() === settings.lang.toLowerCase()) || en[0] || null;
+  }
+  function speak(text, rate = 0.8) {
+    return new Promise(resolve => {
+      if (!('speechSynthesis' in window)) { toast('This browser cannot read words aloud. Say the word yourself.'); resolve(); return; }
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      const v = pickVoice();
+      u.rate = rate;
+      u.lang = v ? v.lang : settings.lang;
+      try { if (v) u.voice = v; } catch (e) {}
+      u.__voiceName = v ? v.name : '';
+      let done = false;
+      const finish = () => { if (!done) { done = true; resolve(); } };
+      u.onend = finish; u.onerror = finish;
+      setTimeout(finish, 1500 + text.length * 120);   // Chrome sometimes never fires onend
+      speechSynthesis.speak(u);
+    });
+  }
+
+  async function speakPausingMic(text, rate) {
+    const wasListening = phase === 'listening';
+    pauseRecognition();
+    await speak(text, rate);
+    if (wasListening && phase === 'listening') setTimeout(resumeRecognition, 300);
+  }
+
+  // ---------- Letter recognition ----------
+  // Every way speech engines commonly write a spoken letter name.
+  const LETTER = {
+    a: 'A', ay: 'A', eh: 'A', hey: 'A', 'a.': 'A', ei: 'A', aa: 'A', eight: 'A',
+    b: 'B', be: 'B', bee: 'B', bea: 'B', bi: 'B',
+    c: 'C', see: 'C', sea: 'C', si: 'C', cee: 'C', she: 'C',
+    d: 'D', dee: 'D', di: 'D', de: 'D', the: null,
+    e: 'E', ee: 'E', ea: 'E',
+    f: 'F', ef: 'F', eff: 'F', af: 'F',
+    g: 'G', gee: 'G', ji: 'G', jee: 'G', gi: 'G',
+    h: 'H', aitch: 'H', haitch: 'H', ach: 'H', age: 'H', eich: 'H', etch: 'H', each: 'H', itch: 'H', ich: 'H', eitch: 'H', hech: 'H',
+    i: 'I', eye: 'I', aye: 'I', ai: 'I',
+    j: 'J', jay: 'J', jae: 'J', je: 'J',
+    k: 'K', kay: 'K', okay: 'K', ok: 'K', cay: 'K', ka: 'K', que: 'K',
+    l: 'L', el: 'L', ell: 'L', elle: 'L', al: 'L',
+    m: 'M', em: 'M', im: 'M', um: null,
+    n: 'N', en: 'N', in: 'N', an: 'N',
+    o: 'O', oh: 'O', owe: 'O', ow: 'O', 'o.': 'O',
+    p: 'P', pee: 'P', pea: 'P', pe: 'P', pi: 'P',
+    q: 'Q', cue: 'Q', queue: 'Q', kew: 'Q', kyu: 'Q', cu: 'Q',
+    r: 'R', ar: 'R', are: 'R', our: 'R', or: 'R', arr: 'R',
+    s: 'S', es: 'S', ess: 'S', ass: 'S', is: 'S', yes: 'S',
+    t: 'T', tee: 'T', tea: 'T', ti: 'T', te: 'T',
+    u: 'U', you: 'U', yu: 'U', ewe: 'U', yew: 'U', yoo: 'U', iu: 'U',
+    v: 'V', vee: 'V', vi: 'V', we: null,
+    w: 'W', doubleyou: 'W', doubleu: 'W',
+    x: 'X', ex: 'X', eks: 'X', axe: 'X',
+    y: 'Y', why: 'Y', wye: 'Y', wai: 'Y',
+    z: 'Z', zee: 'Z', zed: 'Z', zet: 'Z', zi: 'Z'
+  };
+  const FILLER = new Set(['letter', 'capital', 'small', 'uh', 'um', 'erm', 'hmm', 'and', 'then', 'the', 'ah', 'like', 'so', 'okay so']);
+
+  // Turns one transcript into letters. Whole words (the student saying the word itself) are not split.
+  function parseLetters(raw, target) {
+    const text = raw.replace(/\bdouble[\s-]?(u|you|yu)\b/gi, ' doubleyou ');
+    const tokens = text.split(/[\s,\.\-!?;:"]+/).filter(Boolean);
+    const letters = [], ignored = [];
+    for (let i = 0; i < tokens.length; i++) {
+      const t = tokens[i], low = t.toLowerCase();
+      // "double S" -> S S (spelling bee convention)
+      if (low === 'double' && i + 1 < tokens.length) {
+        const nx = mapToken(tokens[i + 1]);
+        if (nx && nx.length === 1) { letters.push(nx[0], nx[0]); i++; continue; }
+      }
+      if (FILLER.has(low) && !(low in LETTER && LETTER[low])) continue;
+      const m = mapToken(t);
+      if (m) letters.push(...m);
+      else ignored.push(t);
+    }
+    return { letters, ignored };
+  }
+  function mapToken(t) {
+    const low = t.toLowerCase();
+    if (LETTER[low]) return [LETTER[low]];
+    if (/^[a-z]$/i.test(t)) return [t.toUpperCase()];
+    if (/^[A-Z]{2,8}$/.test(t)) return t.split('');            // engines often write runs of letters as "CUL"
+    if (/^([a-z]\.){2,}$/i.test(t)) return t.replace(/\./g, '').toUpperCase().split('');
+    return null;
+  }
+  // Picks the alternative that reads most like spelled letters.
+  function bestAlternative(result) {
+    let best = null;
+    for (let a = 0; a < result.length; a++) {
+      const p = parseLetters(result[a].transcript);
+      const score = p.letters.length * 2 - p.ignored.length * 3 + (result[a].confidence || 0);
+      if (!best || score > best.score) best = { ...p, score, transcript: result[a].transcript };
+    }
+    return best || { letters: [], ignored: [], transcript: '' };
+  }
+
+  // committed = letters already confirmed; session* = the live recognition session.
+  let committed = [], unsure = [], sessionFinal = [], interim = [], resultOffset = 0, lastResultCount = 0;
+  let heardWords = [];
+  function currentLetters() { return [...committed, ...sessionFinal]; }
+  function commitSession() {
+    committed = currentLetters();
+    sessionFinal = []; interim = [];
+    resultOffset = lastResultCount;
+  }
+
+  let recognition = null, recActive = false, wantRec = false, recPaused = false, micBlocked = false, micNote = '';
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  // Newer Chrome/Edge can recognize speech from any audio track: the Teams sound, a chosen mic, or the boosted signal.
+  const TRACK_INPUT = !!SR && ('processLocally' in SR.prototype || typeof SR.available === 'function');
+  const LETTER_NAMES = 'A B C D E F G H I J K L M N O P Q R S T U V W X Y Z bee see dee gee aitch jay kay el em en pee cue are ess tee you vee ex why zee zed'.split(' ').concat(['double u']);
+
+  function setupRecognition() {
+    if (!SR) { micBlocked = true; micNote = 'This browser cannot recognize speech. Use Chrome or Edge.'; renderMic(); return null; }
+    const rec = new SR();
+    rec.lang = settings.lang;
+    rec.continuous = true;
+    rec.interimResults = true;     // letters appear while the student is still speaking
+    rec.maxAlternatives = 5;       // more guesses = better chance one of them is the letter
+    // Contextual biasing toward letter names, where the browser supports it.
+    try { if ('phrases' in rec && window.SpeechRecognitionPhrase) rec.phrases = LETTER_NAMES.map(n => new SpeechRecognitionPhrase(n, 5)); } catch (e) {}
+    rec.onstart = () => { recActive = true; lastResultCount = 0; resultOffset = 0; renderMic(); };
+    rec.onresult = e => {
+      lastResultCount = e.results.length;
+      if (phase !== 'listening') return;          // warm-up before Start: nothing is counted
+      const fin = [], inter = [];
+      for (let i = resultOffset; i < e.results.length; i++) {
+        const b = bestAlternative(e.results[i]);
+        if (e.results[i].isFinal) { fin.push(...b.letters); if (b.ignored.length) noteHeard(b.ignored, i); }
+        else inter.push(...b.letters);
+      }
+      sessionFinal = fin; interim = inter;
+      renderLetters();
+    };
+    rec.onerror = e => {
+      if (e.error === 'no-speech' || e.error === 'aborted') return;   // normal; onend restarts
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+        micBlocked = true; wantRec = false;
+        micNote = IN_CLAUDE ? 'Claude blocks the mic here. Open the downloaded page in Chrome.' : 'Mic permission denied. Allow it in the address bar, then reload.';
+      } else if (e.error === 'audio-capture') {
+        micBlocked = true; wantRec = false; micNote = 'No microphone found. Plug one in and reload.';
+      } else if (e.error === 'network') {
+        micNote = 'Speech service unreachable. Check the internet connection.';
+      }
+      renderMic();
+    };
+    rec.onend = () => {
+      recActive = false;
+      commitSession();
+      resultOffset = 0; lastResultCount = 0;
+      // Chrome stops after a pause; restart at once so no letter is missed.
+      if (wantRec && !recPaused && !micBlocked) setTimeout(() => { if (wantRec && !recPaused && !recActive) safeStart(); }, 50);
+      renderMic();
+    };
+    return rec;
+  }
+  function noteHeard(list, idx) {
+    heardWords[idx] = list.join(' ');
+    $('heard').textContent = 'Also heard (not counted): ' + heardWords.filter(Boolean).join(', ');
+  }
+  function safeStart() {
+    if (!recognition) return;
+    recognition.lang = settings.lang;
+    try { recognition.start(); } catch (e) {}   // the browser engine always uses the default microphone
+  }
+  function startRecognition() {
+    if (micBlocked || settings.engine === 'letters') return;
+    recognition = recognition || setupRecognition();
+    if (!recognition) return;
+    wantRec = true; recPaused = false;
+    if (!recActive) safeStart();
+    renderMic();
+  }
+  function stopRecognition() {
+    wantRec = false;
+    if (recognition && recActive) { try { recognition.abort(); } catch (e) {} }
+    renderMic();
+  }
+  function pauseRecognition() {
+    recPaused = true;
+    if (recognition && recActive) { try { recognition.abort(); } catch (e) {} }
+  }
+  function resumeRecognition() {
+    recPaused = false;
+    if (wantRec && !recActive) safeStart();
+  }
+
+  // ---------- Audio source: a microphone, or the Teams sound itself ----------
+  // The signal goes through a boost + compressor so quiet letters come through clearly.
+  let srcStream = null, procTrack = null, procNode = null, gainNode = null, meterRAF = 0, sourceKind = 'mic', sourceDevice = 'default';
+  function closeSource() {
+    cancelAnimationFrame(meterRAF);
+    srcStream?.getTracks().forEach(t => { t.onended = null; t.stop(); });
+    srcStream = null; procTrack = null;
+    $('meter-fill').style.width = '0';
+  }
+  async function openSource(kind, deviceId) {
+    if (IN_CLAUDE || !navigator.mediaDevices?.getUserMedia) {
+      micBlocked = true;
+      micNote = IN_CLAUDE ? 'The mic is blocked inside Claude. Open the downloaded page in Chrome or Edge.' : 'This browser has no microphone access.';
+      renderMic(); return false;
+    }
+    let stream;
+    try {
+      if (kind === 'share') {
+        stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }, systemAudio: 'include', selfBrowserSurface: 'exclude' });
+        if (!stream.getAudioTracks().length) {
+          stream.getTracks().forEach(t => t.stop());
+          toast('No sound was shared. Choose "Teams sound" again and turn on "Share audio".', 'error');
+          return openSource('mic', settings.deviceId);
+        }
+      } else {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: deviceId && deviceId !== 'default' ? { exact: deviceId } : undefined, echoCancellation: true, noiseSuppression: false, autoGainControl: true } });
+      }
+    } catch (e) {
+      if (kind === 'share') { toast('Sharing was cancelled. Still using the microphone.'); fillSourceList(); return !!srcStream; }
+      if (e.name === 'OverconstrainedError' && deviceId !== 'default') return openSource('mic', 'default');
+      micBlocked = true;
+      micNote = e.name === 'NotFoundError' ? 'No microphone found. Plug one in and reload.' : 'Mic permission denied. Allow it in the address bar, then reload.';
+      renderMic(); return false;
+    }
+    closeSource();
+    micBlocked = false; micNote = '';
+    srcStream = stream; sourceKind = kind; sourceDevice = deviceId || 'default';
+    if (kind === 'share') {
+      stream.getVideoTracks().forEach(t => { t.enabled = false; });
+      stream.getAudioTracks()[0].onended = () => { toast('Teams sound sharing stopped. Switched back to the microphone.', 'error'); openSource('mic', settings.deviceId); };
+    } else { settings.deviceId = sourceDevice; store.set('spelling_bee_settings_v2', settings); }
+
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+    const src = actx.createMediaStreamSource(stream);
+    gainNode = actx.createGain();
+    gainNode.gain.value = settings.gain;
+    const comp = actx.createDynamicsCompressor();
+    comp.threshold.value = -45; comp.knee.value = 20; comp.ratio.value = 8; comp.attack.value = 0.002; comp.release.value = 0.12;
+    const an = actx.createAnalyser(); an.fftSize = 1024;
+    const dest = actx.createMediaStreamDestination();
+    src.connect(gainNode); gainNode.connect(comp); comp.connect(an); comp.connect(dest);
+    procTrack = dest.stream.getAudioTracks()[0];
+    procNode = comp;
+    attachEngine();
+
+    const buf = new Float32Array(an.fftSize), fill = $('meter-fill');
+    let level = 0;
+    const tick = () => {
+      an.getFloatTimeDomainData(buf);
+      let sum = 0; for (const v of buf) sum += v * v;
+      level = Math.max(Math.sqrt(sum / buf.length) * 700, level * 0.85);   // fast rise, slow fall
+      fill.style.width = Math.min(100, Math.round(level)) + '%';
+      meterRAF = requestAnimationFrame(tick);
+    };
+    tick();
+    await fillSourceList();
+    // Restart recognition on the new source (onend restarts it if it should be running).
+    if (recognition && recActive) { try { recognition.abort(); } catch (e) {} }
+    renderMic();
+    return true;
+  }
+  async function fillSourceList() {
+    let devs = [];
+    try { devs = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'audioinput'); } catch (e) {}
+    const opts = devs.map((d, i) => [`mic:${d.deviceId}`, d.label || `Microphone ${i + 1}`]);
+    if (navigator.mediaDevices.getDisplayMedia) opts.push(['share', '🎧 Teams sound (share Teams window or tab)']);
+    const sel = $('src-select');
+    sel.innerHTML = opts.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join('');
+    sel.value = sourceKind === 'share' ? 'share' : `mic:${sourceDevice}`;
+    if (sel.selectedIndex < 0) sel.selectedIndex = 0;
+    $('src-row').hidden = false;
+    $('gain-wrap').hidden = settings.engine !== 'letters';
+    $('src-note').textContent = settings.engine === 'letters' ? '' :
+      'Browser speech only listens to the default microphone and cannot use Teams sound or Boost. Switch Recognizer to Letter engine for those.';
+  }
+  async function ensureAudio() {
+    if (!srcStream && !micBlocked) await openSource('mic', settings.deviceId);
+    recognition = recognition || (micBlocked ? null : setupRecognition());
+  }
+  async function turnOnMic() {
+    await ensureAudio();
+    if (srcStream && settings.engine === 'letters') loadEngine();
+    if (srcStream) toast('Microphone is on. Speak and watch the green bar move.', 'success');
+    else if (micBlocked) toast(micNote, 'error');
+  }
+
+  function renderMic() {
+    const box = $('mic-box');
+    const live = settings.engine === 'letters' ? (engineListening() && !!vModel && !!srcStream) : (recActive && !recPaused && phase === 'listening');
+    box.classList.toggle('on', live);
+    box.classList.toggle('blocked', micBlocked);
+    let label;
+    if (micBlocked) label = micNote;
+    else if (live) label = 'Listening… spell now';
+    else if (settings.engine === 'letters' && engineState === 'loading') label = 'Loading the letter engine…';
+    else if (phase === 'speaking') label = 'Mic waits while the word is read';
+    else if (srcStream) label = sourceKind === 'share' ? 'Teams sound connected' : 'Mic ready';
+    else label = 'Microphone off';
+    $('mic-label').textContent = label;
+    $('btn-mic').hidden = !!srcStream || IN_CLAUDE;
+  }
+
+  let shownCount = 0;
+  function renderLetters() {
+    const box = $('letters');
+    const fin = currentLetters(), all = [...fin, ...interim];
+    if (!all.length) { box.innerHTML = '<span class="empty">The letters the student says appear here.</span>'; shownCount = 0; return; }
+    box.innerHTML = all.map((l, i) => `<span class="tile${i >= fin.length ? ' interim' : ''}${i < fin.length && unsure[i] ? ' unsure' : ''}${i >= shownCount ? ' pop' : ''}"${unsure[i] && i < fin.length ? ' title="Not sure about this letter"' : ''}>${esc(l)}</span>`).join('');
+    if (all.length > shownCount) beep(1200, .03, 'sine', .04);
+    shownCount = all.length;
+  }
+  function resetLetters() {
+    commitSession();
+    committed = []; unsure = []; heardWords = []; shownCount = 0;
+    $('heard').textContent = '';
+    renderLetters();
+  }
+
+  // ---------- Letter engine: offline recognizer limited to letter names ----------
+  // Works on any audio (built-in mic, a chosen mic, or the Teams sound) and returns one letter per utterance.
+  const VOSK_SRC = 'https://cdn.jsdelivr.net/npm/vosk-browser@0.0.8/dist/vosk.js';
+  const MODEL_URLS = ['https://ccoreilly.github.io/vosk-browser/models/vosk-model-small-en-us-0.15.tar.gz'];
+  const LETTER_GRAMMAR = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "double", "zed", "[unk]"];
+  let vModel = null, vRec = null, vRate = 0, vProc = null, vLoading = null, engineState = 'off';   // off | loading | ready | failed
+
+  function idb() {
+    return new Promise((res, rej) => {
+      const r = indexedDB.open('spelling_bee_engine', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('files');
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    });
+  }
+  async function cacheGet(key) {
+    try { const db = await idb(); return await new Promise(res => { const q = db.transaction('files').objectStore('files').get(key); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); }); }
+    catch (e) { return null; }
+  }
+  async function cachePut(key, blob) {
+    try { const db = await idb(); db.transaction('files', 'readwrite').objectStore('files').put(blob, key); } catch (e) {}
+  }
+
+  async function unusedFetchModelBlob() {
+    const cached = await cacheGet('model');
+    if (cached) return cached;
+    for (const url of MODEL_URLS) {
+      try {
+        setEngineNote('Downloading the letter engine (about 40 MB, first time only)…');
+        const res = await fetch(url);
+        if (!res.ok) continue;
+        const blob = await res.blob();
+        if (blob.size < 1e6) continue;
+        cachePut('model', blob);
+        return blob;
+      } catch (e) {}
+    }
+    return null;
+  }
+
+  function setEngineNote(t) { $('engine-note').textContent = t; }
+
+  const FILE_KEY = 'https://localhost/vosk-model-small-en-us-0.15.tar.gz';
+  async function loadEngine(file) {
+    if (vModel) return true;
+    if (vLoading) return vLoading;
+    vLoading = (async () => {
+      engineState = 'loading'; renderMic();
+      try {
+        await loadScript(VOSK_SRC);
+        let model = null;
+        if (file) {
+          setEngineNote('Reading the engine file…');
+          const buf = await file.arrayBuffer();
+          model = await openModel(FILE_KEY, buf);
+          cachePut('model', file);
+        } else {
+          const cached = await cacheGet('model');
+          if (cached) {
+            setEngineNote('Starting the letter engine…');
+            model = await openModel(FILE_KEY, await cached.arrayBuffer()).catch(() => null);
+          }
+          if (!model) {
+            setEngineNote('Downloading the letter engine (about 40 MB, first time only)…');
+            model = await openModel(MODEL_URLS[0]).catch(() => null);
+          }
+        }
+        if (!model) throw new Error('no model');
+        vModel = model;
+        engineState = 'ready';
+        $('btn-engine-file').hidden = true;
+        setEngineNote('');
+        attachEngine();
+        return true;
+      } catch (e) {
+        engineState = 'failed';
+        setEngineNote(file ? 'That file is not the letter engine. Choose vosk-model-small-en-us-0.15.tar.gz.'
+                           : 'The letter engine could not be downloaded. Click "Load engine file" and choose vosk-model-small-en-us-0.15.tar.gz.');
+        $('btn-engine-file').hidden = false;
+        return false;
+      } finally {
+        vLoading = null; renderMic();
+      }
+    })();
+    return vLoading;
+  }
+
+  // Starts the engine's worker. Two small patches to its source make it work when this page is opened
+  // straight from a file (file://): a valid base URL, and reading the model from memory when we have it.
+  function openModel(url, buf) {
+    const NativeBlob = window.Blob, NativeWorker = window.Worker;
+    const baseFix = 'location.href.replace(/^blob:/, "")';
+    const fetchFix = 'let response=yield fetch(url);';
+    const prefix = 'self.addEventListener("message",function(e){if(e.data&&e.data.__mb){self.__mb=e.data.__mb;e.stopImmediatePropagation();}});\n';
+    window.Blob = function (parts, opts) {
+      if (parts && typeof parts[0] === 'string' && parts[0].includes(baseFix)) {
+        parts = [prefix + parts[0]
+          .split(baseFix).join('(location.origin === "null" ? "https://localhost/" : ' + baseFix + ')')
+          .split(fetchFix).join('let response=yield (self.__mb?new Response(self.__mb,{headers:{"Content-Length":String(self.__mb.byteLength)}}):fetch(url));')];
+      }
+      return new NativeBlob(parts, opts);
+    };
+    window.Blob.prototype = NativeBlob.prototype;
+    window.Worker = function (u, o) { const w = new NativeWorker(u, o); if (buf) w.postMessage({ __mb: buf }); return w; };
+    window.Worker.prototype = NativeWorker.prototype;
+    let model;
+    try { model = new window.Vosk.Model(url); }
+    finally { window.Blob = NativeBlob; window.Worker = NativeWorker; }
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => { try { model.terminate(); } catch (e) {} reject(new Error('timeout')); }, 180000);
+      model.on('load', m => { clearTimeout(timer); m.result ? resolve(model) : (model.terminate(), reject(new Error('load failed'))); });
+      model.on('error', () => { clearTimeout(timer); try { model.terminate(); } catch (e) {} reject(new Error('error')); });
+    });
+  }
+
+  // A fresh recognizer per word, so nothing heard before Start can leak in.
+  function freshRecognizer() {
+    if (!vModel || !actx) return;
+    try { vRec?.remove(); } catch (e) {}
+    vRate = actx.sampleRate;
+    const rec = new vModel.KaldiRecognizer(vRate, JSON.stringify(LETTER_GRAMMAR));
+    rec.setWords(true);
+    rec.on('partialresult', m => {
+      if (rec !== vRec || !engineListening()) return;
+      interim = parseLetters(m.result.partial || '').letters;
+      renderLetters();
+    });
+    rec.on('result', m => {
+      if (rec !== vRec) return;
+      interim = [];
+      if (!engineListening()) { renderLetters(); return; }
+      const p = parseLetters(m.result.text || '');
+      const low = (m.result.result || []).some(w => w.conf < 0.6);
+      for (const l of p.letters) { committed.push(l); unsure[committed.length - 1] = low; }
+      renderLetters();
+    });
+    vRec = rec;
+  }
+  // Feeds the processed audio (after Boost) to the recognizer.
+  function attachEngine() {
+    if (!vModel || !procNode) return;
+    if (!vRec || vRate !== actx.sampleRate) freshRecognizer();
+    try { vProc?.disconnect(); } catch (e) {}
+    vProc = actx.createScriptProcessor(2048, 1, 1);
+    vProc.onaudioprocess = e => { if (vRec && engineListening()) { try { vRec.acceptWaveform(e.inputBuffer); } catch (err) {} } };
+    const mute = actx.createGain(); mute.gain.value = 0;
+    procNode.connect(vProc); vProc.connect(mute); mute.connect(actx.destination);
+  }
+  const engineListening = () => settings.engine === 'letters' && phase === 'listening' && !recPaused;
+
+
+  // ---------- Timer ----------
+  let timerLeft = 12, timerTotal = 12, timerId = null, wordStart = 0;
+  function setTimerView(left, total) {
+    const c = 2 * Math.PI * 30, f = Math.max(0, left) / total;
+    $('timer-num').textContent = Math.max(0, left);
+    const ring = $('ring-fill');
+    ring.style.strokeDashoffset = c - f * c;
+    ring.style.stroke = f > .5 ? 'var(--ok)' : f > .25 ? 'var(--accent)' : 'var(--bad)';
+  }
+  function startTimer() {
+    clearInterval(timerId);
+    timerTotal = timerLeft = settings.seconds;
+    wordStart = Date.now();
+    setTimerView(timerLeft, timerTotal);
+    $('timer-text').textContent = 'Running';
+    timerId = setInterval(() => {
+      timerLeft--;
+      setTimerView(timerLeft, timerTotal);
+      if (timerLeft > 0 && timerLeft <= 3) beep(900, .05, 'sine', .08);
+      if (timerLeft <= 0) {
+        clearInterval(timerId);
+        beep(880, .3, 'square', .2);
+        $('timer-text').textContent = 'Time is up';
+        // Give the recognizer a moment to deliver the last letter, then check.
+        setTimeout(() => { if (phase === 'listening') checkSpelling(); }, 900);
+      }
+    }, 1000);
+  }
+  function stopTimer() { clearInterval(timerId); }
+  function elapsed() { return Math.min(timerTotal, Math.max(1, Math.round((Date.now() - wordStart) / 1000))); }
+
+  // ---------- Round flow ----------
+  const gradeOf = cls => String(cls).split('-')[0];
+  function poolFor(grade) {
+    const g = words.filter(w => String(w.grade) === grade);
+    return g.length >= 3 ? g : [...g, ...words.filter(w => w.grade === 'any')];
+  }
+  // Shuffled, with words not yet used this session first, so each student gets different words.
+  function order(list) {
+    const a = [...list];
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a.sort((x, y) => usedThisSession.has(x.word) - usedThisSession.has(y.word));
+  }
+  function newRound() {
+    const grade = gradeOf($('select-class').value);
+    const pool = poolFor(grade);
+    if (pool.length < 3) {
+      round = []; results = [null, null, null]; phase = 'idle';
+      $('summary').hidden = true; $('stage').hidden = true;
+      $('no-words').hidden = false;
+      $('no-words-text').textContent = `Grade ${grade} has no word list yet.`;
+      renderSteps();
+      return;
+    }
+    $('no-words').hidden = true;
+    const mode = $('select-level').value;
+    let pick = null;
+    if (mode === 'mixed') {
+      const by = LEVELS.map(L => order(pool.filter(w => w.level === L)));
+      if (by.every(l => l.length)) pick = by.map(l => l[0]);
+    } else if (mode !== 'any') {
+      const lv = order(pool.filter(w => w.level === mode));
+      if (lv.length >= 3) pick = lv.slice(0, 3);
+      else toast(`Grade ${grade} has fewer than 3 ${mode} words, so levels are mixed.`);
+    }
+    round = pick || order(pool).slice(0, 3);
+    round.forEach(w => usedThisSession.add(w.word));
+    if (usedThisSession.size >= pool.length) usedThisSession = new Set(round.map(w => w.word));
+    results = [null, null, null];
+    roundId++;
+    $('summary').hidden = true;
+    $('stage').hidden = false;
+    selectWord(0);
+  }
+
+  function selectWord(i) {
+    if (!round.length) return;
+    speechSynthesis?.cancel?.();
+    stopTimer(); stopRecognition();
+    active = i; phase = 'idle'; wordStart = Date.now();
+    resetLetters();
+    setTimerView(settings.seconds, settings.seconds);
+    $('timer-text').textContent = 'Starts when you press Start';
+    $('verdict').hidden = true;
+    $('btn-check').hidden = false;
+    $('clue').textContent = '';
+    $('say-sub').textContent = `Word ${i + 1} of 3` + (round[i].level ? ` · ${round[i].level}` : '');
+    renderSteps(); renderMic(); renderStart();
+  }
+
+  async function sayWord() {
+    if (!round.length) return;
+    if (phase === 'checked' || phase === 'marked') return;
+    if (phase === 'listening') { speakPausingMic(round[active].word); return; }   // repeat during spelling
+    phase = 'speaking';
+    pauseRecognition();
+    renderMic(); renderStart();
+    await ensureAudio();
+    await speak(round[active].word);
+    if (phase !== 'speaking') return;
+    phase = 'ready';
+    startRecognition();     // warm up now so the very first letter after Start is caught
+    renderMic(); renderStart();
+  }
+
+  async function startSpelling() {
+    if (!round.length || !['idle', 'ready', 'speaking'].includes(phase)) return;
+    speechSynthesis?.cancel?.();
+    await ensureAudio();
+    if (settings.engine === 'letters' && !micBlocked && !vModel) {
+      $('btn-start').textContent = 'Loading…';
+      const ok = await loadEngine();
+      if (!ok) { toast('The letter engine is not ready. Type the letters, or switch Recognizer to Browser speech.', 'error'); }
+    }
+    phase = 'listening';
+    resetLetters();
+    if (settings.engine === 'letters') freshRecognizer();
+    startTimer();
+    startRecognition(); resumeRecognition();
+    renderMic(); renderStart(); renderSteps();
+  }
+
+  function renderStart() {
+    const b = $('btn-start');
+    b.disabled = !['idle', 'ready', 'speaking'].includes(phase) || !round.length;
+    b.classList.toggle('pulse', phase === 'ready');
+    b.textContent = phase === 'listening' ? 'Spelling…' : '▶ Start';
+  }
+
+  function renderSteps() {
+    document.querySelectorAll('.step').forEach((el, i) => {
+      el.className = 'step' + (i === active ? ' active' : '') + (results[i] ? (results[i].pass ? ' pass' : ' fail') : '');
+      el.querySelector('.dot').textContent = results[i] ? (results[i].pass ? '✓' : '✕') : i + 1;
+      el.querySelector('small').textContent = results[i] ? `${results[i].time}s` : (round[i]?.level || '');
+    });
+  }
+
+  function checkSpelling() {
+    if (!round.length || phase === 'checked' || phase === 'marked') return;
+    if (phase !== 'listening' && !currentLetters().length) { toast('Press Start first.'); return; }
+    stopTimer();
+    // Keep letters that were heard but not yet confirmed, then stop listening.
+    const all = [...currentLetters(), ...interim];
+    wantRec = false;
+    if (recognition && recActive) { try { recognition.abort(); } catch (e) {} }
+    committed = all; sessionFinal = []; interim = []; resultOffset = lastResultCount;
+    $('timer-text').textContent = `Stopped after ${elapsed()}s`;
+    renderLetters();
+    phase = 'checked';
+    const target = round[active].word.toUpperCase().replace(/[^A-Z]/g, '');
+    const said = currentLetters().join('');
+    const match = said === target;
+    $('answer-word').textContent = target;
+    $('student-word').innerHTML = said ? said.split('').map((c, i) => c === target[i] ? esc(c) : `<span class="diff">${esc(c)}</span>`).join('') : '<span class="muted" style="font-size:15px;letter-spacing:0">no letters heard</span>';
+    $('verdict').className = 'verdict ' + (match ? 'match' : 'nomatch');
+    $('verdict-title').textContent = match ? 'Letters match the answer.' : 'Letters do not match. Listen back and decide.';
+    $('btn-correct').classList.toggle('suggest', match);
+    $('btn-wrong').classList.toggle('suggest', !match);
+    $('btn-correct').disabled = $('btn-wrong').disabled = false;
+    $('btn-next').hidden = true;
+    $('verdict').hidden = false;
+    $('btn-check').hidden = true;
+    results[active] = null;
+    renderSteps(); renderMic(); renderStart();
+  }
+
+  function mark(pass) {
+    if (phase !== 'checked') return;
+    phase = 'marked';
+    results[active] = { word: round[active].word.toUpperCase(), spelled: currentLetters().join('') || '—', pass, time: elapsed() };
+    pass ? chime() : buzz();
+    $('btn-correct').disabled = $('btn-wrong').disabled = true;
+    $('btn-next').hidden = false;
+    $('btn-next').textContent = active < 2 ? `Word ${active + 2} →` : 'See result →';
+    renderSteps();
+  }
+
+  function nextWord() {
+    if (active < 2) selectWord(active + 1);
+    else finishRound();
+  }
+
+  function finishRound() {
+    stopTimer(); stopRecognition();
+    const name = $('input-student-name').value.trim() || 'Student';
+    const score = results.filter(r => r && r.pass).length;
+    const time = results.reduce((s, r) => s + (r ? r.time : timerTotal), 0);
+    $('sum-name').textContent = name;
+    $('sum-class').textContent = 'Class ' + $('select-class').value;
+    $('sum-score').textContent = `${score} / 3`;
+    $('sum-time').textContent = `${time} seconds total`;
+    $('sum-body').innerHTML = round.map((w, i) => {
+      const r = results[i];
+      return `<tr><td class="w">${esc(w.word.toUpperCase())}</td><td>${esc(r ? r.spelled : 'not tried')}</td><td class="num">${r ? r.time : '—'}s</td><td>${r && r.pass ? '<span class="tag q">Correct</span>' : '<span class="tag e">Wrong</span>'}</td></tr>`;
+    }).join('');
+    $('stage').hidden = true;
+    $('summary').hidden = false;
+    if (score === 3) chime();
+  }
+
+  function saveRound() {
+    if (savedRoundId === roundId || !round.length) return;
+    const score = results.filter(r => r && r.pass).length;
+    records.push({
+      id: Date.now(),
+      name: $('input-student-name').value.trim() || 'Student',
+      classSec: $('select-class').value,
+      score,
+      time: results.reduce((s, r) => s + (r ? r.time : timerTotal), 0),
+      breakdown: round.map((w, i) => `${w.word.toUpperCase()}:${results[i] && results[i].pass ? 'PASS' : 'MISS'}`).join(', ')
+    });
+    savedRoundId = roundId;
+    store.set('spelling_bee_leaderboard_v2', records);
+    renderResults();
+  }
+
+  // ---------- Word bank ----------
+  function saveWords() { store.set('spelling_bee_word_pool_v2', words); renderBank(); }
+  function addWords(items, replace, grade) {
+    grade = String(grade);
+    if (replace) words = words.filter(w => String(w.grade) !== grade);
+    const seen = new Set(words.filter(w => String(w.grade) === grade).map(w => w.word.toLowerCase()));
+    let n = 0;
+    for (const it of items) {
+      const k = it.word.toLowerCase();
+      if (k && !seen.has(k)) { seen.add(k); words.push({ word: it.word, def: it.def, sentence: it.sentence, grade, level: LEVELS.includes(it.level) ? it.level : '' }); n++; }
+    }
+    saveWords();
+    return n;
+  }
+  const gradeLabel = g => g === 'any' ? 'Any grade' : `Grade ${g}`;
+  function renderBank() {
+    const g = $('bank-grade').value;
+    $('nav-word-count').textContent = words.length;
+    const inGrade = words.map((w, i) => [w, i]).filter(([w]) => String(w.grade) === g);
+    $('bank-title').textContent = `${gradeLabel(g)} · ${inGrade.length} words`;
+    const q = $('search').value.toLowerCase();
+    const list = inGrade.filter(([w]) => w.word.toLowerCase().includes(q) || (w.def || '').toLowerCase().includes(q));
+    $('bank-body').innerHTML = list.length ? list.map(([w, i], n) => `
+      <tr><td class="muted num">${n + 1}</td><td class="w">${esc(w.word)}</td><td class="muted">${esc(w.level || '—')}</td><td>${esc(w.def)}</td><td class="muted">${esc(w.sentence)}</td>
+      <td><button class="btn btn-ghost" data-del="${i}" aria-label="Delete ${esc(w.word)}">✕</button></td></tr>`).join('')
+      : `<tr><td colspan="6" class="muted">No words for ${gradeLabel(g)} yet. Upload a word list above.</td></tr>`;
+    // Word counts in the grade pickers
+    for (const id of ['bank-grade', 'upload-grade']) for (const o of $(id).options) {
+      const c = words.filter(w => String(w.grade) === o.value).length;
+      o.textContent = gradeLabel(o.value) + (c ? ` (${c})` : '');
+    }
+  }
+
+  // ---------- Results ----------
+  function renderResults() {
+    $('nav-result-count').textContent = records.length || '';
+    const f = $('filter-class').value;
+    const list = records.filter(r => f === 'ALL' || r.classSec === f).sort((a, b) => (b.score - a.score) || (a.time - b.time));
+    const rankIn = {};
+    $('results-body').innerHTML = list.length ? list.map(r => {
+      rankIn[r.classSec] = (rankIn[r.classSec] || 0) + 1;
+      const rank = rankIn[r.classSec], q = rank <= 3;
+      return `<tr><td><span class="rank ${rank === 1 ? 'r1' : ''}">${rank}</span></td><td><b>${esc(r.name)}</b></td><td>${esc(r.classSec)}</td>
+        <td class="num"><b>${r.score}/3</b></td><td class="num">${r.time}s</td><td><span class="tag ${q ? 'q' : 'e'}">${q ? 'Qualified' : 'Out'}</span></td></tr>`;
+    }).join('') : '<tr><td colspan="6" class="muted">No results yet. Finish a student\'s round to see it here.</td></tr>';
+  }
+
+  // ---------- CSV ----------
+  function parseCSV(text) {
+    const out = [];
+    for (const line of text.split(/\r?\n/)) {
+      if (!line.trim()) continue;
+      const p = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.trim().replace(/^"|"$/g, ''));
+      if (!p[0] || p[0].toLowerCase() === 'word') continue;
+      out.push({ word: p[0].toLowerCase(), def: p[1] || 'Vocabulary word', sentence: p[2] || `Remember how to spell ${p[0]}.` });
+    }
+    return out;
+  }
+  const cell = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  async function exportCSV(filename, rows) {
+    const csv = rows.map(r => r.join(',')).join('\n');
+    if (!IN_CLAUDE) {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+      a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+      return;
+    }
+    try {
+      const dl = await window.claude.use('downloads');
+      if (dl) { await dl.save({ filename, data: new Blob([csv], { type: 'text/csv' }) }); return; }
+    } catch (e) { if (e?.code) { toast('The file was not saved.'); return; } }
+    try { await navigator.clipboard.writeText(csv); toast('Copied to the clipboard. Paste into a spreadsheet.', 'success'); }
+    catch (e) { toast('Could not export from here.', 'error'); }
+  }
+
+  // ---------- AI extraction ----------
+  let ai = null, aiImages = false, extractCtl = null, reviewItems = [];
+  const scripts = {};
+  function loadScript(src) {
+    return scripts[src] = scripts[src] || new Promise((res, rej) => {
+      const s = document.createElement('script'); s.src = src; s.onload = res;
+      s.onerror = () => { delete scripts[src]; rej(new Error('Could not load a helper. Check the internet connection.')); };
+      document.head.appendChild(s);
+    });
+  }
+  async function pdfToText(file) {
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js');
+    const doc = await window.pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false }).promise;
+    const pages = [];
+    for (let p = 1; p <= Math.min(doc.numPages, 40); p++) {
+      const c = await (await doc.getPage(p)).getTextContent();
+      let line = '', y0 = null; const lines = [];
+      for (const it of c.items) { const y = it.transform?.[5]; if (y0 !== null && Math.abs(y - y0) > 2) { lines.push(line); line = ''; } line += it.str + ' '; y0 = y; }
+      lines.push(line); pages.push(lines.join('\n'));
+    }
+    return { text: pages.join('\n\n'), doc };
+  }
+  async function pdfPagesAsImages(doc, max) {
+    const out = [];
+    for (let p = 1; p <= Math.min(doc.numPages, max); p++) {
+      const page = await doc.getPage(p), vp = page.getViewport({ scale: 1.6 }), cv = document.createElement('canvas');
+      cv.width = vp.width; cv.height = vp.height;
+      await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+      out.push(await new Promise(r => cv.toBlob(r, 'image/png')));
+    }
+    return out.filter(Boolean);
+  }
+  async function docxToText(file) {
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');
+    return (await window.mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() })).value || '';
+  }
+
+  const RULES = `You are helping a school teacher build a spelling bee word bank from their own word list.
+
+Find every spelling or vocabulary word the teacher listed for students to spell.
+- Skip headings, instructions, numbering, bullet marks, page numbers, dates, school names, student names and column labels.
+- If the list is a table or "word - meaning - sentence" layout, take the word from the word column.
+- Keep each word spelled exactly as in the source (lowercase unless it is a proper noun).
+- Do not invent words that are not in the source.
+- If the source gives a definition or example sentence for a word, use it.
+- Otherwise write a short, child-friendly definition (under 15 words) and one example sentence (under 15 words) that uses the word.
+- If the source groups words into difficulty levels, set "level" to "Easy", "Medium" or "Hard" to match. Otherwise set "level" to "".
+
+Reply with only a JSON array, in the order the words appear, like:
+[{"word":"culture","level":"Easy","def":"The customs and way of life of a group of people.","sentence":"Music is an important part of our culture."}]`;
+
+  function cleanItems(arr) {
+    const out = [], seen = new Set();
+    for (const it of Array.isArray(arr) ? arr : []) {
+      const word = String((typeof it === 'string' ? it : it?.word) || '').trim().replace(/^[\d\.\)\-\s•*]+/, '').replace(/[\.\,;:]+$/, '');
+      if (!word || word.length > 40 || !/[a-z]/i.test(word) || seen.has(word.toLowerCase())) continue;
+      seen.add(word.toLowerCase());
+      const lvl = String(it?.level || '').trim().toLowerCase();
+      out.push({ level: LEVELS.find(L => L.toLowerCase() === lvl) || '', word: word === word.toUpperCase() ? word.toLowerCase() : word, def: String(it?.def || '').trim() || 'Vocabulary word', sentence: String(it?.sentence || '').trim() || `Remember how to spell ${word}.` });
+    }
+    return out;
+  }
+  function aiErrorText(e) {
+    if (e?.friendly) return e.friendly;
+    return ({
+      not_granted: 'AI is not allowed on this page. Allow Claude in the page permissions.',
+      sampling_disabled: 'Claude is not available on this account.',
+      rate_limited: 'Too many requests. Wait a minute and try again.',
+      prompt_too_large: 'This file is too long. Split it into smaller files.',
+      image_rejected: 'That image could not be read. Try a clearer photo.',
+      invalid_json: 'The AI answer could not be read. Try again.',
+      refused: 'The AI declined this file. Check that it is a word list.'
+    })[e?.code] || 'Something went wrong. Try again.';
+  }
+  function showExtract(title, sub) { $('extract-status').hidden = false; $('extract-title').textContent = title; $('extract-sub').textContent = sub || ''; }
+  function hideExtract() { $('extract-status').hidden = true; }
+
+  async function aiExtract({ text, images, name }) {
+    extractCtl = new AbortController();
+    showExtract('Finding the words…', `${name} · usually 10–40 seconds`);
+    let prompt = RULES + `\n\nSource: "${name}"\n`;
+    if (images?.length) prompt += '\nThe attached image(s) show the teacher\'s word list. Read the words from them.';
+    if (text) prompt += `\n<source_text>\n${text.slice(0, 60000)}\n</source_text>`;
+    const opts = { signal: extractCtl.signal };
+    if (images?.length) opts.images = images;
+    return cleanItems(await ai.json(prompt, opts));
+  }
+
+  async function handleFile(file) {
+    if (!file) return;
+    const name = file.name || 'file', ext = (name.split('.').pop() || '').toLowerCase();
+    const isImg = /^image\//.test(file.type) || ['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(ext);
+    try {
+      showExtract('Reading file…', name);
+      let text = '', images = null;
+      if (isImg) {
+        if (!ai || !aiImages) throw { friendly: 'Photos need AI, which is off right now. Upload a PDF, Word or text file.' };
+        images = [file];
+      } else if (ext === 'pdf') {
+        const r = await pdfToText(file); text = r.text;
+        if (text.replace(/\s/g, '').length < 20) {
+          if (!ai || !aiImages) throw { friendly: 'This PDF is a scan. Turn on AI to read it, or upload a typed copy.' };
+          showExtract('Scanned PDF. Preparing pages…', name);
+          images = await pdfPagesAsImages(r.doc, 4); text = '';
+        }
+      } else if (ext === 'docx') text = await docxToText(file);
+      else if (ext === 'doc') throw { friendly: 'Save the .doc file as .docx or PDF and upload again.' };
+      else text = await file.text();
+
+      const items = ai ? await aiExtract({ text, images, name }) : cleanItems(parseCSV(text).filter(r => /^[a-z][a-z'\- ]{0,38}$/i.test(r.word)));
+      hideExtract();
+      if (!items.length) { toast(`No words found in ${name}.`, 'error'); return; }
+      openReview(items, name);
+    } catch (e) {
+      hideExtract();
+      if (e?.code === 'cancelled') { toast('Stopped.'); return; }
+      toast(e?.friendly || e?.code ? aiErrorText(e) : `Could not read ${name}.`, 'error');
+      if (e?.code === 'not_granted' || e?.code === 'sampling_disabled') aiOff();
+    } finally {
+      extractCtl = null; $('file-input').value = '';
+    }
+  }
+
+  function openReview(items, name) {
+    reviewItems = items.map(it => ({ ...it, keep: true }));
+    const g = $('upload-grade').value;
+    const have = new Set(words.filter(w => String(w.grade) === g).map(w => w.word.toLowerCase()));
+    const dup = reviewItems.filter(it => have.has(it.word.toLowerCase())).length;
+    $('review-sub').textContent = `${reviewItems.length} words from ${name} for ${gradeLabel(g)}` + (dup ? ` · ${dup} already in the bank will be skipped` : '') + '. Untick or fix anything, then add.';
+    $('chk-all').checked = true;
+    renderReview();
+    $('review').hidden = false;
+    $('review').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  function renderReview() {
+    $('review-body').innerHTML = reviewItems.map((it, i) => `<tr style="${it.keep ? '' : 'opacity:.4'}">
+      <td><input type="checkbox" data-i="${i}" data-f="keep" ${it.keep ? 'checked' : ''} aria-label="Keep ${esc(it.word)}" /></td>
+      <td><input type="text" data-i="${i}" data-f="word" value="${esc(it.word)}" style="width:130px;font-weight:700" aria-label="Word" /></td>
+      <td><select data-i="${i}" data-f="level" aria-label="Level" style="width:auto">${['', ...LEVELS].map(L => `<option value="${L}" ${it.level === L ? 'selected' : ''}>${L || '—'}</option>`).join('')}</select></td>
+      <td><textarea data-i="${i}" data-f="def" rows="2" aria-label="Definition">${esc(it.def)}</textarea></td>
+      <td><textarea data-i="${i}" data-f="sentence" rows="2" aria-label="Sentence">${esc(it.sentence)}</textarea></td></tr>`).join('');
+  }
+
+  // Outside Claude: the teacher's own Anthropic API key.
+  const KEY = 'spelling_bee_anthropic_key';
+  const getKey = () => { try { return localStorage.getItem(KEY) || ''; } catch (e) { return ''; } };
+  const b64 = blob => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(blob); });
+  async function shrink(blob) {
+    const bmp = await createImageBitmap(blob), s = Math.min(1, 1600 / Math.max(bmp.width, bmp.height)), c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * s); c.height = Math.round(bmp.height * s);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    return { media_type: 'image/jpeg', data: await b64(await new Promise(r => c.toBlob(r, 'image/jpeg', .85))) };
+  }
+  function parseJson(t) {
+    try { return JSON.parse(t); } catch (e) {}
+    const f = t.match(/```(?:json)?\s*([\s\S]*?)```/); if (f) { try { return JSON.parse(f[1]); } catch (e) {} }
+    const a = t.indexOf('['), b = t.lastIndexOf(']'); if (a > -1 && b > a) { try { return JSON.parse(t.slice(a, b + 1)); } catch (e) {} }
+    throw { code: 'invalid_json' };
+  }
+  function apiClient(key) {
+    return {
+      json: async (prompt, opts = {}) => {
+        const content = [];
+        for (const im of opts.images ? Array.from(opts.images) : []) content.push({ type: 'image', source: { type: 'base64', ...(await shrink(im)) } });
+        content.push({ type: 'text', text: prompt });
+        let res;
+        try {
+          res = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST', signal: opts.signal,
+            headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+            body: JSON.stringify({ model: 'claude-sonnet-5-5', max_tokens: 16000, messages: [{ role: 'user', content }] })
+          });
+        } catch (e) { if (e.name === 'AbortError') throw { code: 'cancelled' }; throw { friendly: 'Could not reach the AI service. Check the internet connection.' }; }
+        if (res.status === 401) throw { friendly: 'The API key was rejected. Check it and save again.' };
+        if (res.status === 429) throw { code: 'rate_limited' };
+        if (!res.ok) throw { friendly: `The AI service returned an error (${res.status}). Try again.` };
+        const d = await res.json();
+        return parseJson((d.content || []).filter(b => b.type === 'text').map(b => b.text).join(''));
+      }
+    };
+  }
+  function aiOff() {
+    ai = null; aiImages = false;
+    $('ai-note').textContent = 'AI is off here, so only TXT/CSV lists are read (one word per line).';
+    $('btn-paste-ai').hidden = true;
+  }
+  function setupStandaloneAi() {
+    $('api-key-box').hidden = false;
+    const k = getKey();
+    $('btn-paste-ai').hidden = !k;
+    if (k) { ai = apiClient(k); aiImages = true; $('input-api-key').value = '••••••••'; $('ai-note').textContent = 'AI is on. Photos and scanned PDFs work too.'; }
+    else { ai = null; aiImages = false; $('ai-note').textContent = 'Add an API key below to turn on AI. TXT/CSV lists work without it.'; }
+  }
+  async function setupAi() {
+    if (!IN_CLAUDE) { setupStandaloneAi(); return; }
+    try {
+      const s = await window.claude.use('sample');
+      if (!s) { aiOff(); return; }
+      ai = s;
+      const lim = await s.limits().catch(() => null);
+      aiImages = !!lim?.images;
+      $('ai-note').textContent = aiImages ? 'Or drag a file here. Photos and scanned PDFs work too.' : 'Or drag a file here.';
+    } catch (e) { aiOff(); }
+  }
+
+  // ---------- Wiring ----------
+  function showTab(name) {
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
+    ['arena', 'words', 'results'].forEach(t => { $('tab-' + t).hidden = t !== name; });
+  }
+
+  function confirmTwice(btn, label, fn) {
+    let armed = null;
+    btn.addEventListener('click', () => {
+      if (armed) { clearTimeout(armed); armed = null; btn.textContent = label; fn(); return; }
+      btn.textContent = 'Click again to confirm';
+      armed = setTimeout(() => { armed = null; btn.textContent = label; }, 3000);
+    });
+  }
+
+  function boot() {
+    // Classes
+    const sel = $('select-class'), filt = $('filter-class');
+    filt.innerHTML = '<option value="ALL">All classes</option>';
+    for (const [g, secs] of Object.entries(CLASSES)) {
+      const og = document.createElement('optgroup'); og.label = 'Grade ' + g;
+      for (const s of secs) {
+        const v = `${g}-${s}`;
+        og.appendChild(new Option(`Grade ${g} - ${s}`, v));
+        filt.appendChild(new Option(`Grade ${g} - ${s}`, v));
+      }
+      sel.appendChild(og);
+    }
+    sel.value = store.get('spelling_bee_last_class', '4-A');
+    if (!sel.value) sel.value = '4-A';
+    const grades = [...Object.keys(CLASSES), ...(words.some(w => w.grade === 'any') ? ['any'] : [])];
+    for (const id of ['bank-grade', 'upload-grade']) $(id).innerHTML = grades.map(g => `<option value="${g}">${gradeLabel(g)}</option>`).join('');
+    $('bank-grade').value = $('upload-grade').value = gradeOf(sel.value);
+    sel.addEventListener('change', () => {
+      store.set('spelling_bee_last_class', sel.value);
+      $('bank-grade').value = $('upload-grade').value = gradeOf(sel.value);
+      renderBank();
+      if (phase === 'idle' || phase === 'marked' || !round.length) newRound();
+    });
+
+    // Color presets
+    $('color-presets').innerHTML = COLOR_PRESETS.map(([n, b, a, g]) => `<button data-b="${b}" data-a="${a}" data-g="${g}"><i style="background:conic-gradient(${b} 0 120deg, ${a} 0 240deg, ${g} 0)"></i>${n}</button>`).join('');
+    $('color-presets').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; settings.brand = b.dataset.b; settings.accent = b.dataset.a; settings.green = b.dataset.g; applySettings(); });
+    $('set-brand').addEventListener('input', e => { settings.brand = e.target.value; applySettings(); });
+    $('set-accent').addEventListener('input', e => { settings.accent = e.target.value; applySettings(); });
+    $('set-green').addEventListener('input', e => { settings.green = e.target.value; applySettings(); });
+    $('set-school').addEventListener('input', e => { settings.school = e.target.value.trim(); applySettings(); });
+    $('set-seconds').addEventListener('change', e => { settings.seconds = +e.target.value; applySettings(); });
+    $('set-sound').addEventListener('change', e => { settings.sound = e.target.value === 'on'; applySettings(); });
+    $('btn-settings').addEventListener('click', () => { $('settings').hidden = !$('settings').hidden; });
+    $('btn-close-settings').addEventListener('click', () => { $('settings').hidden = true; });
+    applySettings();
+
+    document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+
+    // Compete
+    $('btn-new-round').addEventListener('click', newRound);
+    document.querySelectorAll('.step').forEach(el => el.addEventListener('click', () => { if (round.length && !results[+el.dataset.i]) selectWord(+el.dataset.i); }));
+    $('btn-say').addEventListener('click', sayWord);
+    $('btn-start').addEventListener('click', startSpelling);
+    // Space = Start, Enter = Check (when not typing in a box)
+    document.addEventListener('keydown', e => {
+      if (e.target.closest('input, textarea, select, button') || $('tab-arena').hidden) return;
+      if (e.code === 'Space') { e.preventDefault(); startSpelling(); }
+      else if (e.key === 'Enter' && phase === 'listening') { e.preventDefault(); checkSpelling(); }
+    });
+    $('src-select').addEventListener('change', e => { const v = e.target.value; v === 'share' ? openSource('share') : openSource('mic', v.slice(4)); });
+    $('gain').value = settings.gain; $('gain-val').textContent = settings.gain + '×';
+    $('gain').addEventListener('input', e => {
+      settings.gain = +e.target.value; $('gain-val').textContent = settings.gain + '×';
+      if (gainNode) gainNode.gain.value = settings.gain;
+      store.set('spelling_bee_settings_v2', settings);
+    });
+    $('engine-select').value = settings.engine;
+    $('engine-select').addEventListener('change', e => {
+      settings.engine = e.target.value; store.set('spelling_bee_settings_v2', settings);
+      if (settings.engine === 'letters') { stopRecognition(); if (srcStream) loadEngine(); }
+      else if (phase === 'listening') startRecognition();
+      if (srcStream) fillSourceList();
+      $('gain-wrap').hidden = settings.engine !== 'letters';
+      renderMic();
+    });
+    $('engine-file').addEventListener('change', async e => {
+      const f = e.target.files[0]; if (!f) return;
+      vModel = null;
+      const ok = await loadEngine(f);
+      toast(ok ? 'Letter engine is ready.' : 'That file did not work. Choose vosk-model-small-en-us-0.15.tar.gz.', ok ? 'success' : 'error');
+      e.target.value = '';
+    });
+    if (!IN_CLAUDE) $('src-row').hidden = false;
+    $('btn-teams-help').addEventListener('click', () => { $('teams-help').hidden = !$('teams-help').hidden; });
+    $('set-lang').value = settings.lang;
+    $('set-lang').addEventListener('change', e => { settings.lang = e.target.value; settings.voice = ''; applySettings(); loadVoices(); });
+    loadVoices();
+    if ('speechSynthesis' in window) speechSynthesis.addEventListener('voiceschanged', loadVoices);
+    $('set-voice').addEventListener('change', e => { settings.voice = e.target.value; store.set('spelling_bee_settings_v2', settings); });
+    $('btn-test-voice').addEventListener('click', () => speak(round[active]?.word || 'spelling bee'));
+    $('btn-def').addEventListener('click', () => { if (!round.length) return; $('clue').textContent = round[active].def; speakPausingMic(round[active].def, .9); });
+    $('btn-sent').addEventListener('click', () => { if (!round.length) return; $('clue').textContent = round[active].sentence; speakPausingMic(round[active].sentence, .9); });
+    $('btn-mic').addEventListener('click', turnOnMic);
+    $('btn-undo').addEventListener('click', () => { commitSession(); committed.pop(); unsure.length = committed.length; shownCount = Math.min(shownCount, committed.length); renderLetters(); });
+    $('btn-clear').addEventListener('click', resetLetters);
+    $('input-type').addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      const v = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+      if (v) { commitSession(); committed.push(...v.split('')); renderLetters(); }
+      e.target.value = '';
+    });
+    $('btn-check').addEventListener('click', checkSpelling);
+    $('btn-correct').addEventListener('click', () => mark(true));
+    $('btn-wrong').addEventListener('click', () => mark(false));
+    $('btn-next').addEventListener('click', nextWord);
+    $('btn-next-student').addEventListener('click', () => {
+      saveRound();
+      toast('Saved to Results.', 'success');
+      $('input-student-name').value = '';
+      newRound();
+      $('input-student-name').focus();
+    });
+
+    // Words
+    $('file-input').addEventListener('change', e => handleFile(e.target.files[0]));
+    const dz = $('drop');
+    ['dragenter', 'dragover'].forEach(t => dz.addEventListener(t, e => { e.preventDefault(); dz.classList.add('drag'); }));
+    ['dragleave', 'drop'].forEach(t => dz.addEventListener(t, e => { e.preventDefault(); dz.classList.remove('drag'); }));
+    dz.addEventListener('drop', e => handleFile(e.dataTransfer?.files?.[0]));
+    $('btn-stop').addEventListener('click', () => extractCtl?.abort());
+    $('review-body').addEventListener('input', e => {
+      const i = +e.target.dataset.i, f = e.target.dataset.f;
+      if (!reviewItems[i] || !f) return;
+      if (f === 'keep') { reviewItems[i].keep = e.target.checked; e.target.closest('tr').style.opacity = e.target.checked ? '' : '.4'; }
+      else reviewItems[i][f] = e.target.value;
+    });
+    $('chk-all').addEventListener('change', e => { reviewItems.forEach(it => it.keep = e.target.checked); renderReview(); });
+    $('btn-discard').addEventListener('click', () => { reviewItems = []; $('review').hidden = true; });
+    $('btn-add').addEventListener('click', () => {
+      const chosen = cleanItems(reviewItems.filter(it => it.keep));
+      if (!chosen.length) { toast('No words are selected.'); return; }
+      const g = $('upload-grade').value;
+      const n = addWords(chosen, $('chk-replace').checked, g);
+      reviewItems = []; $('review').hidden = true;
+      $('bank-grade').value = g; renderBank();
+      toast(`Added ${n} words.` + (chosen.length - n ? ` ${chosen.length - n} were already there.` : ''), 'success');
+    });
+    $('btn-paste-add').addEventListener('click', () => {
+      const items = parseCSV($('paste').value);
+      if (!items.length) { toast('Paste some words first.'); return; }
+      toast(`Added ${addWords(items, false, $('upload-grade').value)} words to ${gradeLabel($('upload-grade').value)}.`, 'success'); $('paste').value = '';
+    });
+    $('btn-paste-ai').addEventListener('click', async () => {
+      const text = $('paste').value.trim();
+      if (!text) { toast('Paste your word list first.'); return; }
+      if (!ai) { toast('AI is off here.', 'error'); return; }
+      try { const items = await aiExtract({ text, name: 'pasted text' }); hideExtract(); items.length ? openReview(items, 'the pasted text') : toast('No words found.', 'error'); }
+      catch (e) { hideExtract(); if (e?.code !== 'cancelled') toast(aiErrorText(e), 'error'); }
+      finally { extractCtl = null; }
+    });
+    $('bank-grade').addEventListener('change', renderBank);
+    $('btn-go-words').addEventListener('click', () => { $('upload-grade').value = $('bank-grade').value = gradeOf($('select-class').value); renderBank(); showTab('words'); });
+    $('select-level').addEventListener('change', () => { if (phase === 'idle' || phase === 'marked') newRound(); });
+    $('search').addEventListener('input', renderBank);
+    $('bank-body').addEventListener('click', e => {
+      const b = e.target.closest('[data-del]'); if (!b) return;
+      words.splice(+b.dataset.del, 1); saveWords();
+    });
+    $('btn-export-words').addEventListener('click', () => {
+      const g = $('bank-grade').value;
+      exportCSV(`spelling_bee_${g === 'any' ? 'any' : 'grade' + g}_words.csv`, [['Word', 'Level', 'Definition', 'Sentence'], ...words.filter(w => String(w.grade) === g).map(w => [cell(w.word), cell(w.level), cell(w.def), cell(w.sentence)])]);
+    });
+    confirmTwice($('btn-clear-words'), 'Clear grade', () => { const g = $('bank-grade').value; words = words.filter(w => String(w.grade) !== g); saveWords(); });
+    $('btn-save-key').addEventListener('click', () => {
+      const v = $('input-api-key').value.trim();
+      if (!v || v.startsWith('•')) { toast('Paste your API key first.'); return; }
+      try { localStorage.setItem(KEY, v); } catch (e) { toast('This browser would not save the key.', 'error'); return; }
+      setupStandaloneAi(); toast('AI is on.', 'success');
+    });
+    $('btn-forget-key').addEventListener('click', () => { try { localStorage.removeItem(KEY); } catch (e) {} $('input-api-key').value = ''; setupStandaloneAi(); });
+
+    // Results
+    $('filter-class').addEventListener('change', renderResults);
+    $('btn-export-results').addEventListener('click', () => exportCSV('spelling_bee_results.csv', [['Student', 'Class', 'Score', 'TotalSeconds', 'Words'], ...records.map(r => [cell(r.name), cell(r.classSec), r.score, r.time, cell(r.breakdown)])]));
+    confirmTwice($('btn-clear-results'), 'Reset', () => { records = []; store.set('spelling_bee_leaderboard_v2', records); renderResults(); });
+
+    if (IN_CLAUDE) { micBlocked = true; micNote = 'The mic is blocked inside Claude. Open the downloaded page in Chrome for live mic, or type letters.'; }
+    renderBank(); renderResults(); renderMic(); setupAi();
+    newRound();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+</script>
+
+</body></html>
